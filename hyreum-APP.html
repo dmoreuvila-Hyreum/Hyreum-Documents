@@ -1,0 +1,2829 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Hyreum — Mercado Laboral de Proximidad</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Serif+Display&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#F5F4F0;--white:#FFFFFF;--navy:#1B2E4B;--navy2:#243B5E;--gold:#D4940A;--gold-l:#FEF3C7;
+  --green:#15803D;--green-l:#DCFCE7;--red:#B91C1C;--red-l:#FEE2E2;--blue:#1D4ED8;--blue-l:#DBEAFE;
+  --gray:#6B7280;--gray2:#9CA3AF;--gray3:#E5E7EB;--gray4:#F9FAFB;
+  --border:#E2E0D8;--text:#111827;--text2:#374151;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 2px 8px rgba(0,0,0,.05);
+  --shadow2:0 4px 20px rgba(0,0,0,.12);--r:14px;--rs:8px;
+}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+/* SPLASH */
+#splash{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s ease}
+#splash.out{opacity:0;pointer-events:none}
+.sp-logo{font-family:'DM Serif Display',serif;font-size:52px;color:#fff;letter-spacing:-1px;margin-bottom:6px}
+@keyframes splashFade{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.sp-tag{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:4px;text-transform:uppercase;margin-bottom:52px}
+.sp-bar{width:140px;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+.sp-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .3s ease}
+/* AUTH */
+#auth{position:fixed;inset:0;background:var(--navy);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;z-index:8000;overflow-y:auto}
+#auth.show{display:flex}
+.au-logo{font-family:'DM Serif Display',serif;font-size:40px;color:#fff;margin-bottom:4px}
+.au-sub{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:4px;text-transform:uppercase;margin-bottom:32px}
+.au-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:22px;width:100%;max-width:360px}
+.au-tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:18px;background:rgba(0,0,0,.25);border-radius:10px;padding:3px}
+.au-tab{border:none;background:none;color:rgba(255,255,255,.4);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:8px;border-radius:8px;cursor:pointer;transition:all .2s}
+.au-tab.on{background:rgba(255,255,255,.13);color:#fff}
+.au-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.35);display:block;margin-bottom:4px}
+.au-inp{width:100%;padding:10px 12px;border:1.5px solid rgba(255,255,255,.1);border-radius:9px;background:rgba(255,255,255,.06);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-bottom:11px;transition:border-color .2s}
+.au-inp:focus{border-color:var(--gold)}
+.au-inp::placeholder{color:rgba(255,255,255,.2)}
+.au-select{width:100%;padding:10px 12px;border:1.5px solid rgba(255,255,255,.1);border-radius:9px;background:rgba(255,255,255,.06);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-bottom:11px;appearance:none;cursor:pointer}
+.au-select option{background:#1B2E4B}
+.au-btn{width:100%;padding:12px;background:var(--gold);color:var(--navy);border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;transition:opacity .2s}
+.au-btn:active{opacity:.8}
+.au-err{font-size:11px;color:#f87171;margin-bottom:8px;display:none}
+.au-saved{margin-top:16px;width:100%;max-width:360px}
+.au-saved-title{font-size:10px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;text-align:center}
+.au-saved-list{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.au-chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 14px;font-size:11px;color:rgba(255,255,255,.6);cursor:pointer;transition:background .2s}
+.au-chip:hover{background:rgba(255,255,255,.13)}
+/* APP */
+#app{height:100%;display:none;flex-direction:column}
+#app.show{display:flex}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;padding:0 16px;justify-content:space-between;flex-shrink:0;position:relative;z-index:100;box-shadow:0 1px 0 var(--border)}
+.tb-logo{font-family:'DM Serif Display',serif;font-size:22px;color:var(--navy)}
+.tb-right{display:flex;align-items:center;gap:8px}
+.tb-icon-btn{position:relative;width:36px;height:36px;border-radius:50%;border:none;background:var(--gray4);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;color:var(--text)}
+.tb-badge{position:absolute;top:1px;right:1px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid var(--white);display:none}
+.tb-badge.show{display:block}
+.tb-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'DM Serif Display',serif;letter-spacing:.5px}
+/* SCREENS */
+#sw{flex:1;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:none;background:var(--bg)}
+.screen.active{display:block}
+#sc-sonar{overflow:hidden;display:none;flex-direction:column}
+#sc-sonar.active{display:flex}
+/* NAV */
+.bnav{background:var(--white);border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);height:58px;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+.ni{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;position:relative;border:none;background:none;font-family:'DM Sans',sans-serif;padding:6px 0;transition:all .15s}
+.ni-ico{font-size:19px;line-height:1;transition:transform .15s}
+.ni-lbl{font-size:8px;font-weight:600;color:var(--gray2);text-transform:uppercase;letter-spacing:.4px;transition:color .15s}
+.ni.active .ni-lbl{color:var(--navy)}
+.ni.active .ni-ico{transform:scale(1.12)}
+.ni-badge{position:absolute;top:3px;right:calc(50% - 18px);min-width:14px;height:14px;border-radius:7px;background:var(--red);color:#fff;font-size:8px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 3px;border:2px solid var(--white)}
+.ni-badge.show{display:flex}
+/* SONAR */
+#map{flex:1;min-height:0}
+.map-top{position:absolute;top:10px;left:60px;right:10px;z-index:500}
+.map-searchbar{background:var(--white);border-radius:12px;padding:9px 13px;font-size:12px;color:var(--gray);box-shadow:var(--shadow);display:flex;align-items:center;gap:8px}
+.map-fabs{position:absolute;top:10px;left:10px;z-index:500;display:flex;flex-direction:column;gap:6px}
+.mfab{width:40px;height:40px;border-radius:12px;border:none;background:var(--white);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;transition:background .2s}
+.mfab.active{background:var(--navy);color:#fff}
+.sonar-ctrl{position:absolute;bottom:65px;left:12px;z-index:500;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-radius:12px;padding:8px 12px;box-shadow:var(--shadow);min-width:120px}
+.sonar-lbl-s{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray2);margin-bottom:2px}
+.sonar-val-s{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.km-slider{width:100%;accent-color:var(--navy)}
+.map-stats{position:absolute;bottom:12px;left:12px;right:12px;z-index:500}
+.map-stats-inner{background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-radius:12px;padding:8px 14px;display:flex;gap:0;box-shadow:var(--shadow)}
+.mst{flex:1;text-align:center;padding:0 4px}
+.mst:not(:last-child){border-right:1px solid var(--border)}
+.mst-v{font-size:14px;font-weight:700;color:var(--navy);line-height:1}
+.mst-l{font-size:8px;color:var(--gray2);text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.ruta-banner{position:absolute;top:62px;left:12px;right:12px;z-index:500;background:var(--white);border-radius:14px;box-shadow:var(--shadow2);padding:11px 13px;display:none;align-items:center;gap:10px;border-left:3px solid var(--green)}
+.ruta-banner.show{display:flex}
+.ruta-ico{width:36px;height:36px;border-radius:10px;background:var(--green-l);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.ruta-info{flex:1;min-width:0}
+.ruta-title{font-size:13px;font-weight:700;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ruta-sub{font-size:11px;color:var(--gray);margin-top:1px}
+.ruta-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray);flex-shrink:0}
+/* LEAFLET overrides */
+.leaflet-control-attribution{display:none!important}
+.leaflet-popup-content-wrapper{border-radius:14px!important;box-shadow:var(--shadow2)!important;border:1px solid var(--border)!important;font-family:'DM Sans',sans-serif!important}
+.leaflet-popup-content{margin:12px 14px!important;font-family:'DM Sans',sans-serif!important;min-width:170px}
+.leaflet-popup-tip-container{display:none}
+.you-dot{width:16px;height:16px;border-radius:50%;background:#EF4444;border:3px solid #fff;box-shadow:0 0 0 3px rgba(239,68,68,.25);animation:pulseY 2s ease infinite}
+@keyframes pulseY{0%,100%{box-shadow:0 0 0 3px rgba(239,68,68,.25)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+/* COMMON UI */
+.sec-head{padding:14px 16px 10px;background:var(--white);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.sec-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--navy);line-height:1.2}
+.sec-sub{font-size:11px;color:var(--gray);margin-top:2px}
+.btn-primary{background:var(--navy);color:#fff;border:none;border-radius:9px;padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:opacity .15s}
+.btn-primary:active{opacity:.8}
+.btn-ghost{background:var(--white);border:1.5px solid var(--border);border-radius:9px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--text);cursor:pointer}
+.btn-sm{border:none;border-radius:7px;padding:6px 11px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.btn-sm:active{opacity:.7}
+.btn-sm-navy{background:var(--navy);color:#fff}
+.btn-sm-ghost{background:var(--white);border:1px solid var(--border);color:var(--text)}
+.btn-sm-green{background:var(--green-l);color:var(--green)}
+.btn-sm-red{background:var(--red-l);color:var(--red)}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.badge-green{background:var(--green-l);color:var(--green)}
+.badge-gray{background:var(--gray3);color:var(--gray)}
+.badge-blue{background:var(--blue-l);color:var(--blue)}
+.badge-gold{background:var(--gold-l);color:var(--gold)}
+/* TABS */
+.tabs-bar{display:flex;border-bottom:1px solid var(--border);background:var(--white);padding:0 16px}
+.tab-btn{flex:1;padding:10px 0;font-size:11px;font-weight:600;color:var(--gray2);border:none;background:none;font-family:'DM Sans',sans-serif;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;text-align:center}
+.tab-btn.on{color:var(--navy);border-bottom-color:var(--navy)}
+/* OFFER CARD */
+.offer-list{padding:10px}
+.ocard{background:var(--white);border-radius:14px;border:1px solid var(--border);margin-bottom:8px;overflow:hidden;transition:box-shadow .15s}
+.ocard:active{box-shadow:var(--shadow2)}
+.oc-body{padding:13px 13px 9px}
+.oc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.oc-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.3;flex:1;margin-right:8px}
+.oc-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.oc-chip{background:var(--gray4);border-radius:5px;padding:2px 7px;font-size:10px;color:var(--text2);display:flex;align-items:center;gap:3px}
+.oc-foot{padding:8px 13px;background:var(--gray4);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.oc-comp{font-size:12px;font-weight:700;color:var(--navy)}
+.oc-btns{display:flex;gap:5px;flex-wrap:wrap}
+/* PERFIL */
+.prof-hero{background:linear-gradient(145deg,var(--navy) 0%,var(--navy2) 100%);padding:20px 16px 16px;position:relative}
+.prof-av{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:24px;color:var(--navy);margin-bottom:10px;border:2px solid rgba(255,255,255,.15)}
+.prof-name{font-family:'DM Serif Display',serif;font-size:21px;color:#fff;line-height:1.2}
+.prof-type{font-size:10px;color:rgba(255,255,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.prof-stars{display:flex;gap:2px;margin-top:8px;align-items:center}
+.star-ic{font-size:12px}
+.star-ic.on{color:var(--gold)}
+.star-ic.off{color:rgba(255,255,255,.2)}
+.prof-rv{font-size:13px;font-weight:700;color:#fff;margin-left:5px}
+.prof-rc{font-size:10px;color:rgba(255,255,255,.4);margin-left:2px}
+.prof-logout{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 10px;font-size:10px;font-weight:600;color:rgba(255,255,255,.6);cursor:pointer;font-family:'DM Sans',sans-serif}
+.mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px;background:var(--white);border-bottom:1px solid var(--border)}
+.mode-card{padding:11px;border-radius:11px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;transition:all .2s;text-align:left}
+.mode-card.on{border-color:var(--navy);background:var(--navy)}
+.mode-card-ico{font-size:18px;margin-bottom:4px}
+.mode-card-lbl{font-size:11px;font-weight:700;color:var(--gray);transition:color .2s}
+.mode-card.on .mode-card-lbl{color:#fff}
+.mode-card-sub{font-size:10px;color:var(--gray2);margin-top:1px;transition:color .2s}
+.mode-card.on .mode-card-sub{color:rgba(255,255,255,.5)}
+.prof-block{padding:13px 14px;border-bottom:1px solid var(--border);background:var(--white)}
+.prof-block-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.prof-block-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray2)}
+.edit-btn{font-size:10px;font-weight:600;color:var(--navy);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+.tag-list{display:flex;flex-wrap:wrap;gap:5px}
+.tag-pill{display:inline-flex;align-items:center;gap:3px;padding:4px 9px;border-radius:6px;font-size:11px;font-weight:500}
+.tag-pill-navy{background:var(--navy);color:#fff}
+.tag-pill-gray{background:var(--gray4);color:var(--text2)}
+.cv-btn-ui{display:flex;align-items:center;gap:10px;padding:11px;border:1.5px dashed var(--border);border-radius:11px;cursor:pointer;background:none;width:100%;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--gray);transition:border-color .2s}
+.cv-btn-ui:hover{border-color:var(--navy)}
+.hist-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.hist-item:last-child{border-bottom:none}
+.hist-ic{width:34px;height:34px;border-radius:9px;background:var(--gray4);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.hist-main{flex:1}
+.hist-title{font-size:12px;font-weight:600;line-height:1.3}
+.hist-sub{font-size:10px;color:var(--gray);margin-top:2px}
+.hist-stars{font-size:10px;color:var(--gold);margin-top:2px}
+/* CHAT */
+.chat-item{display:flex;gap:11px;padding:13px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--white);transition:background .1s;align-items:center}
+.chat-item:active{background:var(--gray4)}
+.chat-item.unread{background:#FEFCE8}
+.chat-av{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:16px;font-weight:700;color:#fff;flex-shrink:0}
+.chat-info{flex:1;min-width:0}
+.chat-name{font-size:13px;font-weight:600;line-height:1.2}
+.chat-preview{font-size:11px;color:var(--gray);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.chat-time{font-size:9px;color:var(--gray2)}
+.chat-unread-dot{width:16px;height:16px;border-radius:8px;background:var(--navy);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center}
+/* CHAT DETAIL */
+#chat-detail{position:fixed;inset:0;background:var(--bg);z-index:5000;display:none;flex-direction:column}
+#chat-detail.show{display:flex}
+.cd-head{background:var(--white);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:11px;flex-shrink:0}
+.cd-back{background:none;border:none;font-size:22px;cursor:pointer;padding:2px;line-height:1;color:var(--navy)}
+.cd-info{flex:1;min-width:0}
+.cd-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd-sub{font-size:10px;color:var(--gray)}
+.cd-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:7px}
+.msg-row{display:flex;flex-direction:column}
+.msg-row.mine{align-items:flex-end}
+.bubble{max-width:78%;padding:9px 12px;border-radius:14px;font-size:12px;line-height:1.5;word-break:break-word}
+.bubble.theirs{background:var(--white);color:var(--text);border-bottom-left-radius:3px;box-shadow:var(--shadow)}
+.bubble.mine{background:var(--navy);color:#fff;border-bottom-right-radius:3px}
+.bubble-time{font-size:9px;color:var(--gray2);margin-top:2px;padding:0 3px}
+.bubble-acuerdo{background:var(--gold-l);border:1px solid var(--gold);border-radius:11px;padding:10px 12px;font-size:11px;max-width:85%;box-shadow:var(--shadow)}
+.bac-title{font-weight:700;color:var(--navy);margin-bottom:5px;font-size:12px}
+.bac-row{color:var(--text2);margin-top:2px;display:flex;gap:6px}
+.bac-label{color:var(--gray);min-width:60px}
+.cd-footer{background:var(--white);border-top:1px solid var(--border);padding:9px 11px;display:flex;gap:7px;flex-shrink:0;align-items:flex-end}
+.cd-inp{flex:1;background:var(--gray4);border:none;border-radius:10px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;resize:none;max-height:80px;line-height:1.4}
+.cd-send-btn{background:var(--navy);border:none;border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;flex-shrink:0;transition:opacity .15s}
+.cd-send-btn:active{opacity:.8}
+.cd-acuerdo-btn{background:none;border:1.5px solid var(--border);border-radius:9px;padding:6px 10px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:700;color:var(--navy);cursor:pointer;flex-shrink:0;white-space:nowrap}
+/* NOTIF */
+.notif-item{display:flex;gap:11px;padding:13px 14px;border-bottom:1px solid var(--border);background:var(--white)}
+.notif-item.unread{background:#FFFBEB}
+.notif-ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;background:var(--gray4)}
+.notif-body{flex:1}
+.notif-title{font-size:12px;font-weight:600;line-height:1.4}
+.notif-sub{font-size:11px;color:var(--gray);margin-top:2px;line-height:1.4}
+.notif-time{font-size:9px;color:var(--gray2);margin-top:3px}
+/* PROFILE VIEW */
+#profile-view{position:fixed;inset:0;background:var(--bg);z-index:4000;display:none;flex-direction:column;overflow-y:auto}
+#profile-view.show{display:flex}
+.pv-head{background:var(--white);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
+.pv-back{background:none;border:none;font-size:22px;cursor:pointer;color:var(--navy)}
+/* MODALS */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;display:none;align-items:flex-end;backdrop-filter:blur(2px)}
+.overlay.open{display:flex}
+.sheet{background:var(--white);border-radius:22px 22px 0 0;width:100%;max-height:92vh;overflow-y:auto;padding:18px 14px 32px;animation:slideUp .25s cubic-bezier(.34,1.4,.64,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:30px;height:3px;border-radius:2px;background:var(--border);margin:0 auto 14px}
+.sheet-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--navy);margin-bottom:3px}
+.sheet-sub{font-size:11px;color:var(--gray);margin-bottom:14px}
+.field{margin-bottom:11px}
+.field label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray2);display:block;margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);background:var(--white);outline:none;transition:border-color .2s;appearance:none;-webkit-appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--navy)}
+.field textarea{resize:none;height:72px}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B7280'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center}
+.comp-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:11px}
+.comp-opt{border:1.5px solid var(--border);border-radius:9px;padding:9px 6px;text-align:center;cursor:pointer;background:var(--white);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;color:var(--gray);transition:all .2s}
+.comp-opt.sel{border-color:var(--navy);background:var(--navy);color:#fff}
+.tag-wrap{border:1.5px solid var(--border);border-radius:9px;overflow:hidden;transition:border-color .2s}
+.tag-wrap:focus-within{border-color:var(--navy)}
+.tags-sel{display:flex;flex-wrap:wrap;gap:4px;padding:6px 8px}
+.tags-sel:empty{padding:0}
+.tag-sel-pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:5px;background:var(--navy);color:#fff;font-size:11px}
+.tag-sel-pill button{border:none;background:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:12px;padding:0;line-height:1}
+.tag-inp-f{width:100%;border:none;outline:none;padding:8px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text)}
+.tag-sugg{border-top:1px solid var(--border);max-height:140px;overflow-y:auto;display:none}
+.ts-item{padding:8px 11px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .1s}
+.ts-item:hover{background:var(--gray4)}
+.save-btn{width:100%;padding:13px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
+.cancel-btn{width:100%;padding:10px;background:none;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);cursor:pointer;margin-top:6px}
+/* RATING */
+#rating-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:6000;display:none;align-items:center;justify-content:center;padding:20px}
+#rating-overlay.open{display:flex}
+.rating-card{background:var(--white);border-radius:20px;padding:22px;width:100%;max-width:320px}
+.star-row{display:flex;gap:6px;justify-content:center;margin:14px 0}
+.star-tap{font-size:30px;cursor:pointer;transition:transform .1s;line-height:1}
+.star-tap:active{transform:scale(1.25)}
+/* CANDIDATES */
+#cands-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3500;display:none;align-items:flex-end}
+#cands-overlay.open{display:flex}
+.cands-sheet{background:var(--white);border-radius:22px 22px 0 0;width:100%;max-height:80vh;overflow-y:auto;padding:18px 14px 32px}
+.cand-item{display:flex;gap:11px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.cand-item:last-child{border-bottom:none}
+.cand-av{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:15px;color:#fff;flex-shrink:0}
+.cand-info{flex:1}
+.cand-name{font-size:13px;font-weight:600}
+.cand-type{font-size:10px;color:var(--gray)}
+.cand-btns{display:flex;gap:5px}
+/* ACUERDO */
+#acuerdo-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:6000;display:none;align-items:flex-end}
+#acuerdo-overlay.open{display:flex}
+/* EMPTY */
+.empty-state{padding:52px 24px;text-align:center}
+.empty-ico{font-size:44px;margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:5px}
+.empty-sub{font-size:12px;color:var(--gray);line-height:1.5}
+/* POPUP */
+.pp-name{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:2px}
+.pp-type{font-size:10px;color:var(--gray);margin-bottom:7px}
+.pp-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:7px}
+.pp-tag{background:var(--gray4);border-radius:4px;padding:2px 6px;font-size:10px;color:var(--text2)}
+.pp-stars{font-size:11px;color:var(--gold);margin-bottom:8px}
+.pp-btn{width:100%;padding:7px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;margin-bottom:4px}
+.pp-btn2{width:100%;padding:6px;background:none;border:1px solid var(--border);color:var(--text);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer}
+.divider-8{height:8px;background:var(--bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+
+/* ─ TIPO CARDS registro */
+.tipo-card{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:13px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all .2s;margin-bottom:10px}
+.tipo-card.sel,.tipo-card:active{border-color:var(--gold);background:rgba(212,148,10,.13)}
+.tipo-card-ico{font-size:28px;flex-shrink:0}
+.tipo-card-name{font-size:14px;font-weight:700;color:#fff}
+.tipo-card-desc{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+/* ─ TEST */
+.test-opt{width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:11px;padding:12px 14px;color:rgba(255,255,255,.85);font-size:13px;line-height:1.4;cursor:pointer;text-align:left;transition:all .15s;font-family:'DM Sans',sans-serif;margin-bottom:8px;display:block}
+.test-opt.sel,.test-opt:active{border-color:var(--gold);background:rgba(212,148,10,.15);color:#fff}
+.test-prog{width:100%;height:3px;background:rgba(255,255,255,.1);border-radius:3px;margin-bottom:20px;overflow:hidden}
+.test-prog-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .4s ease}
+/* ─ INSIGNIAS */
+.ins-wrap{display:flex;flex-wrap:wrap;gap:6px}
+.ins{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;border:1.5px solid transparent;cursor:default}
+.ins-ok{background:var(--gold-l);border-color:var(--gold);color:#92400e}
+.ins-no{background:var(--gray4);border-color:var(--gray3);color:var(--gray2)}
+.ins-bad{background:var(--red-l);border-color:var(--red);color:var(--red)}
+.ins-prox{background:var(--gray4);border-color:var(--gray3);color:var(--gray2);font-style:italic}
+/* ─ DOCS */
+.doc-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.doc-row:last-child{border-bottom:none}
+.doc-name{font-size:12px;font-weight:600;color:var(--text)}
+.doc-ok{font-size:10px;color:var(--green)}
+.doc-pend{font-size:10px;color:var(--gold)}
+.doc-upload-btn{font-size:10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer;color:var(--gray);flex-shrink:0}
+/* ─ SONAR TOGGLE */
+.sonar-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--white);border-bottom:1px solid var(--border)}
+.tog{position:relative;width:44px;height:26px;flex-shrink:0;cursor:pointer}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-track{position:absolute;inset:0;background:var(--gray3);border-radius:13px;transition:background .2s}
+.tog input:checked+.tog-track{background:var(--navy)}
+.tog-knob{position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .2s;pointer-events:none}
+.tog input:checked~.tog-knob{transform:translateX(18px)}
+/* ─ EVA */
+#sc-eva{display:none;flex-direction:column}
+#sc-eva.active{display:flex}
+.eva-head{background:linear-gradient(160deg,var(--navy),var(--navy2));padding:18px 20px;text-align:center;border-bottom:1px solid var(--border);flex-shrink:0}
+.eva-ico-wrap{position:relative;display:inline-block;margin-bottom:8px}
+.eva-badge{position:absolute;top:-6px;right:-14px;background:var(--navy);color:var(--gold);font-size:9px;font-weight:700;border-radius:10px;padding:2px 6px;border:2px solid rgba(255,255,255,.3)}
+.eva-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.eva-bubble{max-width:86%;padding:10px 13px;border-radius:16px;font-size:13px;line-height:1.5}
+.eva-bubble.bot{background:var(--white);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:4px}
+.eva-bubble.me{background:var(--navy);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.eva-foot{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--white);flex-shrink:0;align-items:flex-end;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+.eva-inp-field{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;font-size:16px;outline:none;resize:none;-webkit-appearance:none}
+.eva-inp-field:focus{border-color:var(--navy)}
+.eva-send-btn{background:var(--navy);border:none;border-radius:50%;width:38px;height:38px;color:#fff;font-size:17px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.eva-prem-pill{display:inline-flex;align-items:center;gap:5px;margin-top:8px;background:rgba(212,148,10,.15);border:1px solid rgba(212,148,10,.3);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--gold);cursor:pointer}
+/* ─ TOAST */
+#toast{position:fixed;bottom:calc(75px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(27,46,75,.96);color:#fff;padding:10px 20px;border-radius:24px;font-size:13px;font-weight:600;z-index:9999;opacity:0;pointer-events:none;transition:opacity .3s;white-space:nowrap;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+/* ─ BANNER TEST */
+.test-banner{background:var(--gold-l);border:1.5px solid var(--gold);border-radius:10px;padding:12px 14px;margin:0 16px 8px;display:flex;align-items:center;gap:10px}
+</style>
+</head>
+<body>
+
+<!-- ── SPLASH ── -->
+<div id="splash">
+  <div style="animation:splashFade 0.8s ease both;display:flex;flex-direction:column;align-items:center;margin-bottom:40px">
+    <!-- GLOBO SVG -->
+    <svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="80" cy="80" r="64" stroke="rgba(255,255,255,0.9)" stroke-width="6" fill="none"/>
+      <ellipse cx="80" cy="80" rx="64" ry="24" stroke="rgba(255,255,255,0.65)" stroke-width="3.5" fill="none"/>
+      <ellipse cx="80" cy="80" rx="28" ry="64" stroke="rgba(255,255,255,0.65)" stroke-width="3.5" fill="none"/>
+      <path d="M19 54 Q80 66 141 54" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none"/>
+      <path d="M19 106 Q80 94 141 106" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none"/>
+      <line x1="16" y1="80" x2="144" y2="80" stroke="rgba(255,255,255,0.9)" stroke-width="4"/>
+      <!-- Figura humana dorada -->
+      <circle cx="80" cy="63" r="13" fill="#D4940A"/>
+      <path d="M52 100 Q52 82 80 82 Q108 82 108 100 Z" fill="#D4940A"/>
+    </svg>
+    <!-- Texto separado del SVG — sin solapamiento -->
+    <div style="margin-top:22px;font-family:'DM Sans',Arial Black,sans-serif;font-size:32px;font-weight:800;color:#fff;letter-spacing:6px">HYREUM</div>
+    <div style="margin-top:6px;font-family:'DM Sans',Arial,sans-serif;font-size:11px;font-weight:600;color:rgba(255,255,255,0.45);letter-spacing:3.5px">GLOBAL EMPLOYMENT</div>
+  </div>
+  <div class="sp-bar"><div class="sp-fill" id="sp-fill"></div></div>
+</div>
+
+<!-- ── AUTH ── -->
+<div id="auth">
+  <div class="au-logo">Hyreum</div>
+  <div class="au-sub">Barcelona · Provincia</div>
+
+  <!-- PASO 0: login / inicio registro -->
+  <div class="au-card" id="reg-p0">
+    <div class="au-tabs">
+      <button class="au-tab on" onclick="authTab('login',this)">Entrar</button>
+      <button class="au-tab" onclick="authTab('reg',this)">Crear cuenta</button>
+    </div>
+    <div id="au-login">
+      <label class="au-label">Usuario</label>
+      <input class="au-inp" id="au-u" placeholder="tu_usuario" autocomplete="username" style="font-size:16px"/>
+      <label class="au-label">Contraseña</label>
+      <input class="au-inp" id="au-p" type="password" placeholder="••••••" autocomplete="current-password" style="font-size:16px"/>
+      <div class="au-err" id="au-err"></div>
+      <button class="au-btn" onclick="doLogin()">Entrar →</button>
+    </div>
+    <div id="au-reg" style="display:none">
+      <p style="font-size:12px;color:rgba(255,255,255,.5);text-align:center;margin-bottom:14px">¿Cómo usarás Hyreum?</p>
+      <button class="au-btn" onclick="regGo(1)">Crear cuenta →</button>
+    </div>
+  </div>
+
+  <!-- PASO 1: tipo de cuenta -->
+  <div id="reg-p1" style="display:none;width:100%;max-width:360px">
+    <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.35);margin-bottom:14px;text-align:center">Paso 1 de 3 · Tipo de cuenta</p>
+    <div class="tipo-card" id="tc-trabajador" onclick="regSelTipo('trabajador')">
+      <div class="tipo-card-ico">👤</div>
+      <div><div class="tipo-card-name">Trabajador/a</div><div class="tipo-card-desc">Busco trabajo o refuerzos puntuales</div></div>
+    </div>
+    <div class="tipo-card" id="tc-autonomo" onclick="regSelTipo('autonomo')">
+      <div class="tipo-card-ico">🔧</div>
+      <div><div class="tipo-card-name">Autónomo/a</div><div class="tipo-card-desc">Ofrezco servicios profesionales</div></div>
+    </div>
+    <div class="tipo-card" id="tc-empresa" onclick="regSelTipo('empresa')">
+      <div class="tipo-card-ico">🏢</div>
+      <div><div class="tipo-card-name">Empresa / Negocio</div><div class="tipo-card-desc">Contrato personal o servicios</div></div>
+    </div>
+    <div class="au-err" id="reg-err1"></div>
+    <button class="au-btn" style="margin-top:4px" onclick="regGo(2)">Continuar →</button>
+    <button class="au-btn" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);margin-top:8px" onclick="regGo(0)">← Volver</button>
+  </div>
+
+  <!-- PASO 2: datos personales -->
+  <div id="reg-p2" style="display:none;width:100%;max-width:360px">
+    <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.35);margin-bottom:14px;text-align:center" id="reg-p2-title">Paso 2 de 3 · Tus datos</p>
+    <div id="reg-p2-fields"></div>
+    <div class="au-err" id="reg-err2"></div>
+    <button class="au-btn" onclick="regGo(3)">Continuar →</button>
+    <button class="au-btn" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);margin-top:8px" onclick="regGo(1)">← Volver</button>
+  </div>
+
+  <!-- PASO 3: test 12 preguntas -->
+  <div id="reg-p3" style="display:none;width:100%;max-width:360px">
+    <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.35);margin-bottom:6px;text-align:center" id="reg-p3-title">Pregunta 1 de 12</p>
+    <div class="test-prog"><div class="test-prog-fill" id="reg-prog" style="width:0%"></div></div>
+    <p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:10px" id="reg-dim-lbl"></p>
+    <p style="font-size:14px;color:#fff;font-weight:600;line-height:1.5;margin-bottom:16px;min-height:54px" id="reg-q-txt"></p>
+    <div id="reg-q-opts"></div>
+    <button style="width:100%;background:none;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;padding:10px;text-decoration:underline;margin-top:6px" onclick="regSkipTest()">Saltar (puntuación mínima 1★)</button>
+  </div>
+
+  <!-- PASO 4: resultado -->
+  <div id="reg-p4" style="display:none;width:100%;max-width:360px;text-align:center">
+    <div style="font-family:'DM Serif Display',serif;font-size:26px;color:#fff;margin-bottom:6px">¡Perfil creado!</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.45);margin-bottom:24px" id="reg-res-sub">Tu puntuación inicial</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;text-align:left" id="reg-res-dims"></div>
+    <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:20px;line-height:1.6" id="reg-res-note"></div>
+    <button class="au-btn" onclick="launchApp()">Entrar a Hyreum →</button>
+  </div>
+
+  <div class="au-saved" id="au-saved"></div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-logo">Hyreum</div>
+    <div class="tb-right">
+      <button class="tb-icon-btn" onclick="nav(4)">🔔<div class="tb-badge" id="tb-badge"></div></button>
+      <div class="tb-avatar" id="tb-av" onclick="nav(2)">?</div>
+    </div>
+  </div>
+
+  <div id="sw">
+
+    <!-- SONAR -->
+    <div id="sc-sonar" class="screen">
+      <div style="position:relative;flex:1;min-height:0;display:flex;flex-direction:column">
+        <div id="map" style="flex:1;min-height:0"></div>
+        <div class="map-top">
+          <div class="map-searchbar">
+            <span>📡</span>
+            <span id="sonar-info" style="font-size:11px;color:var(--gray)">SONAR activo · cargando…</span>
+          </div>
+        </div>
+        <div class="map-fabs">
+          <button class="mfab" id="fab-c" onclick="centerMap()" title="Centrar">📍</button>
+          <button class="mfab" id="fab-g" onclick="toggleGlobal()" title="Vista global">🌍</button>
+          <button class="mfab" id="fab-s" onclick="toggleSim()" title="Simular movimiento">🚶</button>
+        </div>
+        <div class="ruta-banner" id="ruta-banner">
+          <div class="ruta-ico">🧭</div>
+          <div class="ruta-info">
+            <div class="ruta-title" id="ruta-title">Ruta al trabajo</div>
+            <div class="ruta-sub" id="ruta-sub">Calculando ruta…</div>
+          </div>
+          <button class="ruta-close" onclick="closeRuta()">×</button>
+        </div>
+        <div class="sonar-ctrl">
+          <div class="sonar-lbl-s">Radio SONAR</div>
+          <div class="sonar-val-s" id="sonar-km">5 km</div>
+          <input type="range" class="km-slider" min="1" max="50" value="5" oninput="updateKm(this.value)">
+        </div>
+        <div class="map-stats">
+          <div class="map-stats-inner">
+            <div class="mst"><div class="mst-v" id="ms-m">—</div><div class="mst-l">Matches</div></div>
+            <div class="mst"><div class="mst-v" id="ms-d">—</div><div class="mst-l">Recorrido</div></div>
+            <div class="mst"><div class="mst-v" id="ms-z">BCN</div><div class="mst-l">Zona</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OFERTAS -->
+    <div id="sc-ofertas" class="screen">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">Ofertas</div>
+          <div class="sec-sub" id="of-sub">Tu actividad laboral</div>
+        </div>
+        <button class="btn-primary" onclick="openCreateOffer()">+ Nueva</button>
+      </div>
+      <div class="tabs-bar">
+        <button class="tab-btn on" onclick="ofTab('mias',this)">Mis ofertas</button>
+        <button class="tab-btn" onclick="ofTab('candidaturas',this)">Candidaturas</button>
+      </div>
+      <div id="ofertas-list"></div>
+    </div>
+
+    <!-- PERFIL -->
+    <div id="sc-perfil" class="screen">
+      <div id="perfil-content"></div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="sc-chat" class="screen">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">Mensajes</div>
+          <div class="sec-sub">Conversaciones activas</div>
+        </div>
+      </div>
+      <div id="chat-list"></div>
+    </div>
+
+    <!-- NOTIFICACIONES -->
+    <div id="sc-notif" class="screen">
+      <div class="sec-head">
+        <div>
+          <div class="sec-title">Actividad</div>
+          <div class="sec-sub">Novedades recientes</div>
+        </div>
+      </div>
+      <div id="notif-list"></div>
+    </div>
+
+    <!-- EVA -->
+    <div id="sc-eva" class="screen">
+      <div class="eva-head">
+        <div class="eva-ico-wrap">
+          <div style="font-size:34px">⭐</div>
+          <div class="eva-badge" id="eva-badge">0</div>
+        </div>
+        <div style="font-family:'DM Serif Display',serif;font-size:20px;color:#fff">EVA</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:3px">Evaluation Virtual Assistant</div>
+        <div class="eva-prem-pill" onclick="showToast('🔒 EVA Premium · 2,99€/mes · Disponible en la app oficial')">🔒 EVA Premium · 2,99€/mes</div>
+      </div>
+      <div class="eva-body" id="eva-body"></div>
+      <div class="eva-foot">
+        <textarea class="eva-inp-field" id="eva-inp" placeholder="Pregunta a EVA…" rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){evaSend();event.preventDefault()}"></textarea>
+        <button class="eva-send-btn" onclick="evaSend()">↑</button>
+      </div>
+    </div>
+  </div><!-- /sw -->
+
+  <nav class="bnav" style="grid-template-columns:repeat(6,1fr)">
+    <button class="ni active" onclick="nav(0)"><div class="ni-ico">📡</div><div class="ni-lbl">SONAR</div></button>
+    <button class="ni" onclick="nav(1)"><div class="ni-ico">💼</div><div class="ni-lbl">Ofertas</div><div class="ni-badge" id="ni-bdg-ofertas"></div></button>
+    <button class="ni" onclick="nav(2)"><div class="ni-ico">👤</div><div class="ni-lbl">Perfil</div></button>
+    <button class="ni" onclick="nav(3)"><div class="ni-ico">💬</div><div class="ni-lbl">Chat</div><div class="ni-badge" id="ni-bdg-chat"></div></button>
+    <button class="ni" onclick="nav(4)"><div class="ni-ico">🔔</div><div class="ni-lbl">Actividad</div><div class="ni-badge" id="ni-bdg-notif"></div></button>
+    <button class="ni" onclick="nav(5)"><div class="ni-ico">⭐</div><div class="ni-lbl">EVA</div></button>
+  </nav>
+</div><!-- /app -->
+
+<!-- ── CHAT DETAIL ── -->
+<div id="chat-detail">
+  <div class="cd-head">
+    <button class="cd-back" onclick="closeChatDetail()">‹</button>
+    <div class="cd-info">
+      <div class="cd-name" id="cd-name"></div>
+      <div class="cd-sub" id="cd-sub"></div>
+    </div>
+    <button class="cd-acuerdo-btn" onclick="openAcuerdo()">📋 Acuerdo</button>
+    <button class="cd-acuerdo-btn" onclick="deleteChatConfirm()" style="color:var(--red);border-color:var(--red-l)">🗑</button>
+  </div>
+  <div class="cd-msgs" id="cd-msgs"></div>
+  <div class="cd-footer">
+    <textarea class="cd-inp" id="cd-inp" placeholder="Escribe un mensaje…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){sendMsg();event.preventDefault()}"></textarea>
+    <button class="cd-send-btn" onclick="sendMsg()">↑</button>
+  </div>
+</div>
+
+<!-- ── PROFILE VIEW (otros usuarios) ── -->
+<div id="profile-view">
+  <div class="pv-head">
+    <button class="pv-back" onclick="closeProfileView()">‹</button>
+    <div style="font-size:14px;font-weight:700" id="pv-title">Perfil</div>
+  </div>
+  <div id="pv-content"></div>
+</div>
+
+<!-- ── CREAR OFERTA ── -->
+<div class="overlay" id="create-overlay" onclick="closeOverlay('create-overlay',event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Nueva oferta</div>
+    <div class="sheet-sub">Publica lo que necesitas</div>
+    <div class="field">
+      <label>Sector</label>
+      <select id="of-sector" onchange="onSectorChange(this.value)">
+        <option value="">Selecciona sector…</option>
+        <option value="hosteleria">🍽️ Hostelería</option>
+        <option value="construccion">🔨 Construcción y reformas</option>
+        <option value="limpieza">🧹 Limpieza</option>
+        <option value="comercio">🛒 Comercio</option>
+        <option value="logistica">📦 Logística y transporte</option>
+        <option value="cuidados">❤️ Cuidados</option>
+        <option value="seguridad">🛡️ Seguridad</option>
+        <option value="admin">📋 Administración</option>
+        <option value="it">💻 IT y Tecnología</option>
+        <option value="belleza">💇 Belleza y estética</option>
+        <option value="jardineria">🌿 Jardinería</option>
+        <option value="educacion">📚 Educación</option>
+        <option value="eventos">🎉 Eventos</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Categoría del puesto (hashtags)</label>
+      <div class="tag-wrap">
+        <div id="of-tags-wrap" class="tags-sel"></div>
+        <input class="tag-inp-f" id="of-tag-inp" placeholder="Escribe para buscar…" oninput="filterOfferTags(this.value)" onkeydown="tagKD(event)" onblur="setTimeout(()=>document.getElementById('of-tag-sugg').style.display='none',200)" onfocus="filterOfferTags(this.value)"/>
+        <div class="tag-sugg" id="of-tag-sugg"></div>
+      </div>
+    </div>
+    <div class="field"><label>Descripción</label><textarea id="of-desc" placeholder="Ej: Necesito camarero de sala para viernes noche…"></textarea></div>
+    <div class="field"><label>Número de vacantes</label><input type="number" id="of-vacantes" value="1" min="1" max="99"/></div>
+    <div class="field"><label>Fecha</label><input type="date" id="of-fecha"/></div>
+    <div class="field"><label>Hora de inicio</label><input type="time" id="of-hora"/></div>
+    <div class="field">
+      <label>Duración estimada</label>
+      <select id="of-duracion">
+        <option value="2h">2 horas</option>
+        <option value="4h">4 horas</option>
+        <option value="jornada">Jornada completa</option>
+        <option value="1semana">1 semana</option>
+        <option value="1mes">1 mes</option>
+        <option value="3meses">3 meses</option>
+        <option value="6meses">6 meses</option>
+        <option value="indefinido">Indefinido</option>
+        <option value="negociar">A negociar en chat</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Tipo de compensación</label>
+      <div class="comp-grid">
+        <div class="comp-opt sel" onclick="selCompOpt('puntual',this)">Por trabajo</div>
+        <div class="comp-opt" onclick="selCompOpt('contrato',this)">Contrato</div>
+        <div class="comp-opt" onclick="selCompOpt('negociar',this)">Negociar</div>
+      </div>
+    </div>
+    <div id="comp-puntual" class="field"><label>Importe (€)</label><input type="number" id="of-importe" placeholder="Ej: 120"/></div>
+    <div id="comp-contrato" class="field" style="display:none">
+      <label>Condiciones del contrato</label>
+      <select id="of-contrato">
+        <option value="convenio">Según convenio colectivo aplicable</option>
+        <option value="1200">1.200 €/mes brutos</option>
+        <option value="1300">1.300 €/mes brutos</option>
+        <option value="1400">1.400 €/mes brutos</option>
+        <option value="1500">1.500 €/mes brutos</option>
+        <option value="1700">1.700 €/mes brutos</option>
+        <option value="2000">2.000 €/mes brutos</option>
+        <option value="chat">Indicar salario en el chat</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Ubicación (barrio o municipio)</label>
+      <input id="of-lugar" placeholder="Ej: Gràcia, Barcelona" list="mun-dl"/>
+      <datalist id="mun-dl"></datalist>
+    </div>
+    <button class="save-btn" onclick="saveOffer()">Publicar oferta</button>
+    <button class="cancel-btn" onclick="document.getElementById('create-overlay').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
+
+<!-- ── EDITAR TAGS PERFIL ── -->
+<div class="overlay" id="edit-tag-overlay" onclick="closeOverlay('edit-tag-overlay',event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="edit-tags-title">Mis hashtags</div>
+    <div class="sheet-sub">Máximo 8 categorías</div>
+    <div class="field">
+      <div class="tag-wrap">
+        <div id="edit-tag-wrap" class="tags-sel"></div>
+        <input class="tag-inp-f" id="edit-tag-inp" placeholder="Escribe para buscar categorías…" oninput="filterEditTags(this.value)" onblur="setTimeout(()=>document.getElementById('edit-tag-sugg').style.display='none',200)" onfocus="filterEditTags(this.value)"/>
+        <div class="tag-sugg" id="edit-tag-sugg"></div>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveEditTags()">Guardar</button>
+    <button class="cancel-btn" onclick="document.getElementById('edit-tag-overlay').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
+
+<!-- ── ACUERDO ── -->
+<div class="overlay" id="acuerdo-overlay" onclick="closeOverlay('acuerdo-overlay',event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Proponer acuerdo</div>
+    <div class="sheet-sub">Queda registrado en el chat como referencia</div>
+    <div class="field"><label>Descripción del trabajo</label><textarea id="ac-desc" placeholder="Ej: Pintar salón y dos habitaciones, 80m²…"></textarea></div>
+    <div class="field"><label>Precio acordado</label><input id="ac-precio" placeholder="Ej: 800€ o 15€/hora"/></div>
+    <div class="field"><label>Duración estimada</label><input id="ac-dur" placeholder="Ej: 3 días, del lunes al miércoles"/></div>
+    <div class="field"><label>Fecha de inicio</label><input type="date" id="ac-fecha2"/></div>
+    <button class="save-btn" onclick="sendAcuerdo()">Registrar acuerdo</button>
+    <button class="cancel-btn" onclick="document.getElementById('acuerdo-overlay').classList.remove('open')">Cancelar</button>
+  </div>
+</div>
+
+<!-- ── CANDIDATOS ── -->
+<div class="overlay" id="cands-overlay" onclick="closeOverlay('cands-overlay',event)">
+  <div class="sheet cands-sheet" id="cands-sheet">
+    <div class="sheet-handle"></div>
+  </div>
+</div>
+
+<!-- ── VALORACIÓN ── -->
+<div id="rating-overlay">
+  <div class="rating-card">
+    <div style="text-align:center">
+      <div style="font-size:36px">⭐</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:19px;color:var(--navy);margin-top:8px">¿Cómo fue el trabajo?</div>
+      <div style="font-size:11px;color:var(--gray);margin-top:4px" id="rating-who"></div>
+    </div>
+    <div style="margin:12px 0">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray2);margin-bottom:6px">Puntualidad</div>
+      <div class="star-row" id="star-puntualidad">
+        <span class="star-tap" onmousedown="setDimRating('puntualidad',1)">☆</span><span class="star-tap" onmousedown="setDimRating('puntualidad',2)">☆</span><span class="star-tap" onmousedown="setDimRating('puntualidad',3)">☆</span><span class="star-tap" onmousedown="setDimRating('puntualidad',4)">☆</span><span class="star-tap" onmousedown="setDimRating('puntualidad',5)">☆</span>
+      </div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray2);margin-top:10px;margin-bottom:6px">Profesionalidad</div>
+      <div class="star-row" id="star-profesionalidad">
+        <span class="star-tap" onmousedown="setDimRating('profesionalidad',1)">☆</span><span class="star-tap" onmousedown="setDimRating('profesionalidad',2)">☆</span><span class="star-tap" onmousedown="setDimRating('profesionalidad',3)">☆</span><span class="star-tap" onmousedown="setDimRating('profesionalidad',4)">☆</span><span class="star-tap" onmousedown="setDimRating('profesionalidad',5)">☆</span>
+      </div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray2);margin-top:10px;margin-bottom:6px">Trato</div>
+      <div class="star-row" id="star-trato">
+        <span class="star-tap" onmousedown="setDimRating('trato',1)">☆</span><span class="star-tap" onmousedown="setDimRating('trato',2)">☆</span><span class="star-tap" onmousedown="setDimRating('trato',3)">☆</span><span class="star-tap" onmousedown="setDimRating('trato',4)">☆</span><span class="star-tap" onmousedown="setDimRating('trato',5)">☆</span>
+      </div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gray2);margin-top:10px;margin-bottom:6px">Calidad del trabajo</div>
+      <div class="star-row" id="star-calidad">
+        <span class="star-tap" onmousedown="setDimRating('calidad',1)">☆</span><span class="star-tap" onmousedown="setDimRating('calidad',2)">☆</span><span class="star-tap" onmousedown="setDimRating('calidad',3)">☆</span><span class="star-tap" onmousedown="setDimRating('calidad',4)">☆</span><span class="star-tap" onmousedown="setDimRating('calidad',5)">☆</span>
+      </div>
+    </div>
+    <div class="field"><label>Comentario (opcional)</label><textarea id="rating-comment" style="height:56px" placeholder="¿Algo destacable?"></textarea></div>
+    <button class="save-btn" onclick="submitRating()">Enviar valoración</button>
+    <button class="cancel-btn" onclick="skipRating()">Ahora no (quedará registrado)</button>
+  </div>
+</div>
+
+<script>
+
+
+// ═══════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════
+const LS={
+  get:k=>{try{return JSON.parse(localStorage.getItem('hyr_'+k))}catch{return null}},
+  set:(k,v)=>{try{localStorage.setItem('hyr_'+k,JSON.stringify(v))}catch{}},
+  del:k=>{try{localStorage.removeItem('hyr_'+k)}catch{}}
+};
+
+// ═══════════════════════════════════════════════
+// HASHTAG LIBRARY — 13 SECTORES + CONVENIOS
+// ═══════════════════════════════════════════════
+const HASHTAG_LIB={
+  hosteleria:{icon:'🍽️',label:'Hostelería',convenio:'Convenio Estatal de Hostelería',
+    tags:['#ayudante_cocina','#cocinero','#jefe_de_cocina','#camarero_de_barra','#camarero_de_sala','#barista','#maitre','#sommelier','#friegaplatos','#recepcionista_hotel','#gobernanta','#camarero_de_pisos','#room_service','#fregador']},
+  construccion:{icon:'🔨',label:'Construcción',convenio:'Convenio General de la Construcción',
+    tags:['#peon_construccion','#albañil','#oficial_primera','#encofrador','#ferrallista','#pintor','#electricista_obra','#fontanero','#solador','#escayolista','#carpintero','#cerrajero','#reformas','#azulejista']},
+  limpieza:{icon:'🧹',label:'Limpieza',convenio:'Convenio de Limpieza de Edificios y Locales',
+    tags:['#limpiador','#cristalero','#limpieza_industrial','#operario_limpieza','#responsable_limpieza','#limpieza_comunidades','#limpieza_hotel','#limpieza_oficinas','#auxiliar_limpieza']},
+  comercio:{icon:'🛒',label:'Comercio',convenio:'Convenio General de Comercio',
+    tags:['#dependiente','#cajero','#reponedor','#jefe_de_seccion','#encargado_tienda','#vendedor','#promotor','#escaparatista','#visual_merchandiser']},
+  logistica:{icon:'📦',label:'Logística',convenio:'Convenio de Transporte de Mercancías por Carretera',
+    tags:['#mozo_almacen','#carretillero','#repartidor','#conductor_furgoneta','#conductor_camion','#preparador_pedidos','#operario_logistica','#estibador','#almacenero']},
+  cuidados:{icon:'❤️',label:'Cuidados',convenio:'Convenio de Empresas de Atención a Personas Dependientes',
+    tags:['#cuidador_mayores','#auxiliar_SAD','#canguro','#cuidado_ninos','#asistente_domicilio','#gerocultor','#auxiliar_clinica','#terapeuta_ocupacional','#auxiliar_enfermeria']},
+  seguridad:{icon:'🛡️',label:'Seguridad',convenio:'Convenio Colectivo de Empresas de Seguridad',
+    tags:['#vigilante_seguridad','#controlador_accesos','#seguridad_eventos','#guarda_jurado','#auxiliar_vigilancia','#seguridad_privada']},
+  admin:{icon:'📋',label:'Administración',convenio:'Convenio de Oficinas y Despachos',
+    tags:['#administrativo','#recepcionista','#auxiliar_administrativo','#contable','#RRHH','#office_manager','#secretaria','#teleoperador','#gestor_documental']},
+  it:{icon:'💻',label:'IT y Tecnología',convenio:'Condiciones de mercado — sin convenio único',
+    tags:['#developer','#frontend','#backend','#diseñador_ux','#data_analyst','#devops','#product_manager','#soporte_tecnico','#sysadmin','#qa_tester']},
+  belleza:{icon:'💇',label:'Belleza y estética',convenio:'Convenio de Peluquería y Estética',
+    tags:['#peluquero','#barbero','#esteticista','#manicura','#maquillador','#masajista','#estetica_avanzada']},
+  jardineria:{icon:'🌿',label:'Jardinería',convenio:'Convenio Colectivo de Jardinería',
+    tags:['#jardinero','#podador','#paisajista','#operario_jardineria','#mantenimiento_jardines','#jardinero_autonomo']},
+  educacion:{icon:'📚',label:'Educación',convenio:'Variable según titularidad del centro educativo',
+    tags:['#profesor_particular','#tutor','#monitor','#educador','#auxiliar_educativo','#formador','#monitor_comedor','#cuidador_escolar']},
+  eventos:{icon:'🎉',label:'Eventos',convenio:'Convenio de Organizadores de Eventos',
+    tags:['#azafata_eventos','#promotor_eventos','#montador','#tecnico_sonido','#camarero_eventos','#coordinador_eventos','#animador','#fotógrafo_eventos']}
+};
+
+function getAllTagsList(){
+  return Object.entries(HASHTAG_LIB).flatMap(([k,s])=>s.tags.map(t=>({tag:t,sector:k,sectorData:s})));
+}
+
+// ═══════════════════════════════════════════════
+// MUNICIPIOS PROVINCIA BARCELONA — datos reales INE/SS
+// ═══════════════════════════════════════════════
+const MUNICIPIOS=[
+  {n:'Barcelona',lat:41.3874,lng:2.1686,w:892481,a:93860,e:231732,p:63491},
+  {n:"L'Hospitalet",lat:41.3598,lng:2.1093,w:128000,a:13400,e:22000,p:18500},
+  {n:'Badalona',lat:41.4469,lng:2.2450,w:95000,a:10200,e:18500,p:15800},
+  {n:'Terrassa',lat:41.5636,lng:2.0089,w:98000,a:10800,e:19200,p:13200},
+  {n:'Sabadell',lat:41.5432,lng:2.1095,w:94000,a:10500,e:18800,p:12400},
+  {n:'Mataró',lat:41.5381,lng:2.4443,w:61000,a:6800,e:12200,p:8900},
+  {n:'Santa Coloma de Gramenet',lat:41.4505,lng:2.2087,w:52000,a:5200,e:9800,p:9200},
+  {n:'Cornellà',lat:41.3549,lng:2.0707,w:48000,a:5100,e:9400,p:6800},
+  {n:'Sant Boi',lat:41.3436,lng:2.0381,w:38000,a:4200,e:7200,p:5600},
+  {n:'Rubí',lat:41.4938,lng:2.0327,w:35000,a:4800,e:6800,p:4900},
+  {n:'Castelldefels',lat:41.2803,lng:1.9764,w:28000,a:3600,e:5400,p:3800},
+  {n:'Granollers',lat:41.6069,lng:2.2875,w:32000,a:4200,e:6800,p:4200},
+  {n:'Cerdanyola',lat:41.4911,lng:2.1397,w:29000,a:3200,e:5600,p:3900},
+  {n:'Viladecans',lat:41.3153,lng:2.0209,w:27000,a:3100,e:5200,p:3600},
+  {n:'El Prat',lat:41.3267,lng:2.0975,w:26000,a:2800,e:4900,p:3700},
+  {n:'Mollet del Vallès',lat:41.5368,lng:2.2115,w:24000,a:2600,e:4800,p:3200},
+  {n:'Gavà',lat:41.3044,lng:1.9987,w:22000,a:2900,e:4200,p:2900},
+  {n:'Sant Cugat',lat:41.4726,lng:2.0845,w:38000,a:7200,e:8400,p:2800},
+  {n:'Martorell',lat:41.4729,lng:1.9322,w:18000,a:2400,e:3600,p:2400},
+  {n:'Sitges',lat:41.2368,lng:1.8116,w:14000,a:2800,e:3200,p:1800},
+  {n:'Montgat',lat:41.4728,lng:2.2670,w:5200,a:580,e:950,p:680},
+  {n:'Vilassar de Mar',lat:41.5013,lng:2.3942,w:7800,a:980,e:1600,p:980},
+  {n:'El Masnou',lat:41.4861,lng:2.3148,w:9200,a:1100,e:1900,p:1200},
+  {n:'Premià de Mar',lat:41.4945,lng:2.3607,w:11000,a:1300,e:2100,p:1500},
+  {n:'Malgrat de Mar',lat:41.6463,lng:2.7383,w:8500,a:980,e:1700,p:1200},
+  {n:'Calella',lat:41.6138,lng:2.6624,w:7200,a:860,e:1500,p:980},
+  {n:'Pineda de Mar',lat:41.6268,lng:2.6804,w:6800,a:780,e:1380,p:920},
+  {n:'Arenys de Mar',lat:41.5811,lng:2.5491,w:8200,a:980,e:1680,p:1080},
+  {n:'Canet de Mar',lat:41.5907,lng:2.5855,w:6200,a:720,e:1280,p:840},
+  {n:'Sant Pol de Mar',lat:41.6092,lng:2.6267,w:3200,a:420,e:680,p:420},
+  {n:'Tordera',lat:41.7021,lng:2.7249,w:7800,a:920,e:1580,p:1050},
+  {n:'Manresa',lat:41.7284,lng:1.8241,w:38000,a:4400,e:7200,p:5800},
+  {n:'Igualada',lat:41.5795,lng:1.6184,w:24000,a:3200,e:4800,p:3200},
+  {n:'Berga',lat:42.1023,lng:1.8480,w:8200,a:1100,e:1680,p:1180},
+  {n:'Vic',lat:41.9303,lng:2.2550,w:24000,a:3400,e:4800,p:3200},
+  {n:'Vilanova i la Geltrú',lat:41.2241,lng:1.7254,w:22000,a:2800,e:4400,p:3200},
+  {n:'Esplugues',lat:41.3771,lng:2.0892,w:24000,a:2800,e:5200,p:3100},
+  {n:"Sant Adrià",lat:41.4211,lng:2.2294,w:18000,a:1900,e:3400,p:2800},
+  {n:'Ripollet',lat:41.4983,lng:2.1571,w:15000,a:1700,e:2900,p:2100},
+  {n:'Montcada i Reixac',lat:41.4859,lng:2.1868,w:16000,a:1800,e:3100,p:2300},
+];
+
+// ═══════════════════════════════════════════════
+// NOMBRES SIMULADOS
+// ═══════════════════════════════════════════════
+const NH=['Carlos','Ahmed','Jordi','Marc','David','Luis','Miguel','Dani','Sergi','Pau','Iván','Javier','Antonio','Xavier','Bruno','Rubén','Paco','Jorge','Óscar','Fernando','Mohamed','Omar','Andreu','Miquel','Guillem','Tomàs','Eduard','Albert','Josep','Ramón'];
+const NM=['Laura','Sofia','María','Elena','Ana','Carmen','Nuria','Marta','Rosa','Fàtima','Carla','Laia','Júlia','Gemma','Cristina','Yolanda','Inés','Beatriz','Silvia','Patricia','Aicha','Amina','Blanca','Montse','Pilar','Dolors','Elisabet','Mercè','Sandra','Miriam'];
+const AP=['García','Martínez','López','Sánchez','Pérez','Gómez','Pujol','Mas','Vila','Costa','Torres','Ferrer','Rodríguez','Fernández','González','Díaz','Moreno','Ruiz','Hernández','Muñoz','Castro','Romero','Gutiérrez','Navarro','Hassan','Mohammed','Khalil','Ibáñez','Roca','Puig'];
+// Empresas con sector vinculado — coherencia real
+const EMPRESAS=[
+  {n:'Bar Restaurante El Racó',       s:'hosteleria'},
+  {n:'Cafeteria Central',              s:'hosteleria'},
+  {n:'Hotel Mediterrani',              s:'hosteleria'},
+  {n:'Restaurant Can Mingo',           s:'hosteleria'},
+  {n:'Pizzeria Roma',                  s:'hosteleria'},
+  {n:'Hotel Arts Barcelona',           s:'hosteleria'},
+  {n:'Forn de Pa Artesà',              s:'hosteleria'},
+  {n:'Discoteca Razzmatazz',           s:'hosteleria'},
+  {n:'Cafè de l\'Acadèmia',           s:'hosteleria'},
+  {n:'Cervecería Catalana',            s:'hosteleria'},
+  {n:'Construcciones Vidal SL',        s:'construccion'},
+  {n:'Reformas Gràcia',                s:'construccion'},
+  {n:'Obres i Reformes Maresme',       s:'construccion'},
+  {n:'Construccions Castelldefels',    s:'construccion'},
+  {n:'Reformas Integral BCN',          s:'construccion'},
+  {n:'Limpiezas Maresme',              s:'limpieza'},
+  {n:'Servicios de Limpieza BCN SL',   s:'limpieza'},
+  {n:'Limpiezas Profesionales Vallès', s:'limpieza'},
+  {n:'Supermercats Bonpreu',           s:'comercio'},
+  {n:'Mercadona Horta',                s:'comercio'},
+  {n:'El Corte Inglés BCN',            s:'comercio'},
+  {n:'Fruit Fresc Mercat',             s:'comercio'},
+  {n:'Decathlon Diagonal',             s:'comercio'},
+  {n:'Carrefour Granollers',           s:'comercio'},
+  {n:'Logística BCN Express',          s:'logistica'},
+  {n:'SEUR Barcelona',                 s:'logistica'},
+  {n:'DHL Zona Franca',                s:'logistica'},
+  {n:'Transportes Maresme SA',         s:'logistica'},
+  {n:'Clínica Sant Joan',              s:'cuidados'},
+  {n:'Geria Salut Vella',              s:'cuidados'},
+  {n:'Residència Les Flors',           s:'cuidados'},
+  {n:'Escola Bressol Estrella',        s:'educacion'},
+  {n:'Acadèmia d\'Idiomes BCN',       s:'educacion'},
+  {n:'Seguretat Vallès',               s:'seguridad'},
+  {n:'Prosegur Barcelona',             s:'seguridad'},
+  {n:'Peluqueria Estil',               s:'belleza'},
+  {n:'Barbers & Co BCN',               s:'belleza'},
+  {n:'Jardineria Verda',               s:'jardineria'},
+  {n:'Jardins de Barcelona SL',        s:'jardineria'},
+  {n:'Assessoria Comptable BCN',       s:'admin'},
+  {n:'Gestoria Maresme',               s:'admin'},
+  {n:'Tech Startup BCN',               s:'it'},
+  {n:'Agència d\'Events Diagonal',    s:'eventos'},
+];
+const AVCOLS=['#1B2E4B','#D4940A','#15803D','#1D4ED8','#B91C1C','#7C3AED','#C026D3','#0891B2','#EA580C','#4F7942'];
+
+function rN(){const m=Math.random()<.52;return (m?NH:NM)[~~(Math.random()*(m?NH:NM).length)]+' '+AP[~~(Math.random()*AP.length)]}
+function rE(){return EMPRESAS[~~(Math.random()*EMPRESAS.length)]}
+function rC(){return AVCOLS[~~(Math.random()*AVCOLS.length)]}
+function rR(){return+(3.0+Math.random()*2).toFixed(1)}
+function rTags(sector){
+  const s=HASHTAG_LIB[sector];if(!s)return[];
+  return [...s.tags].sort(()=>Math.random()-.5).slice(0,1+~~(Math.random()*2));
+}
+function rSector(){return Object.keys(HASHTAG_LIB)[~~(Math.random()*Object.keys(HASHTAG_LIB).length)]}
+
+// ═══════════════════════════════════════════════
+// GENERAR POOL SIMULADO
+// ═══════════════════════════════════════════════
+let simPool=[];
+
+function genPool(){
+  simPool=[];
+  MUNICIPIOS.forEach(mun=>{
+    const total=mun.w+mun.a+mun.e;
+    const n=Math.max(4,Math.round(total/2800));
+    for(let i=0;i<n;i++){
+      const rv=Math.random();
+      let tipo,nombre;
+      let empresaSector=null;
+      if(rv<.55){tipo='trabajador';nombre=rN();}
+      else if(rv<.74){tipo='autonomo';nombre=rN();}
+      else{tipo='empresa';const emp=rE();nombre=emp.n;empresaSector=emp.s;}
+      const sector=tipo==='empresa'?empresaSector:rSector();
+      if(tipo==='trabajador'&&Math.random()<(mun.p/Math.max(mun.w,1))*.4)tipo='parado';
+      const spread=mun.w>500000?.022:mun.w>80000?.038:.055;
+      const angle=Math.random()*Math.PI*2;
+      const dist=spread*Math.sqrt(Math.random());
+      const lat=mun.lat+dist*Math.cos(angle);
+      const lng=mun.lng+dist*Math.sin(angle);
+      const id='s'+simPool.length;
+      const baseRating=rR();
+      const rDim=()=>Math.min(5,Math.max(1,+(baseRating+(Math.random()-.5)).toFixed(1)));
+      // Dims como CONTRATANTE (empresa, o particular que contrata)
+      const dimsContratante={
+        puntualidad_pagos:rDim(),
+        claridad:rDim(),
+        trato:rDim(),
+        condiciones:rDim(),
+        repetiria:rDim(),
+      };
+      // Dims como PRESTADOR (trabajador o autónomo)
+      const dimsPrestadorTrabajador={
+        puntualidad:rDim(),
+        calidad:rDim(),
+        actitud:rDim(),
+        comunicacion:rDim(),
+        repetiria:rDim(),
+      };
+      // Dims como PRESTADOR AUTÓNOMO
+      const dimsPrestadorAutonomo={
+        puntualidad:rDim(),
+        calidad:rDim(),
+        precio_justo:rDim(),
+        resolucion:rDim(),
+        repetiria:rDim(),
+      };
+      const dims=tipo==='empresa'
+        ? dimsContratante
+        : tipo==='autonomo'
+          ? dimsPrestadorAutonomo
+          : dimsPrestadorTrabajador;
+      simPool.push({
+        id,tipo,nombre,sector,
+        tags:rTags(sector),
+        rating:baseRating,
+        dims,
+        dimsContratante: tipo!=='empresa' ? dimsContratante : null,
+        dimsPrestador: tipo==='empresa' ? dimsPrestadorTrabajador : null,
+        trabajos:~~(Math.random()*90)+1,
+        color:rC(),mun:mun.n,lat,lng,
+        dlat:tipo!=='empresa'?(Math.random()-.5)*.000038:0,
+        dlng:tipo!=='empresa'?(Math.random()-.5)*.000048:0,
+        phase:Math.random()*Math.PI*2,
+      });
+    }
+  });
+  console.log('Pool:',simPool.length,'usuarios');
+}
+
+// ═══════════════════════════════════════════════
+// USERS / AUTH
+// ═══════════════════════════════════════════════
+function getUsers(){return LS.get('users')||[]}
+function saveUsers(u){LS.set('users',u)}
+function getActive(){const id=LS.get('uid');return getUsers().find(u=>u.id===id)||null}
+function saveActive(p){const users=getUsers();const i=users.findIndex(u=>u.id===p.id);if(i>=0)users[i]=p;else users.push(p);saveUsers(users)}
+function setUid(id){LS.set('uid',id)}
+
+// OFFERS
+function getOffers(){return LS.get('offers')||[]}
+function saveOffers(o){LS.set('offers',o)}
+
+// CHATS
+function getChats(){return LS.get('chats')||{}}
+function saveChats(c){LS.set('chats',c)}
+function getChatId(a,b){return [a,b].sort().join('__')}
+function getMessages(cid){const c=getChats();return c[cid]||[]}
+function addMessage(cid,msg){const c=getChats();if(!c[cid])c[cid]=[];c[cid].push(msg);saveChats(c)}
+function deleteChat(cid){const c=getChats();delete c[cid];saveChats(c)}
+
+// NOTIFS
+function getNotifs(uid){return LS.get('notifs_'+uid)||[]}
+function addNotif(uid,n){const ns=getNotifs(uid);ns.unshift({...n,id:'n'+Date.now(),read:false});LS.set('notifs_'+uid,ns.slice(0,50))}
+function markNotifsRead(uid){const ns=getNotifs(uid).map(n=>({...n,read:true}));LS.set('notifs_'+uid,ns)}
+
+// ═══════════════════════════════════════════════
+// HAVERSINE
+// ═══════════════════════════════════════════════
+function haversine(la1,lo1,la2,lo2){
+  const R=6371000,dL=(la2-la1)*Math.PI/180,dO=(lo2-lo1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dO/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function nearestMun(lat,lng){
+  let best=MUNICIPIOS[0],bd=Infinity;
+  MUNICIPIOS.forEach(m=>{const d=haversine(lat,lng,m.lat,m.lng);if(d<bd){bd=d;best=m;}});
+  return best.n;
+}
+
+function initials(name){return name.split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase()}
+function tipoLabel(tipo){return tipo==='empresa'?'🏢 Empresa':tipo==='autonomo'?'🔧 Autónomo/a':tipo==='parado'?'🔍 En búsqueda':'👤 Trabajador/a'}
+function timeAgo(ts){
+  const d=(Date.now()-ts)/1000;
+  if(d<60)return 'ahora';if(d<3600)return ~~(d/60)+'min';
+  if(d<86400)return ~~(d/3600)+'h';return ~~(d/86400)+'d';
+}
+function fmtTime(ts){const d=new Date(ts);return d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')}
+
+
+// ═══════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════
+let map=null,mapReady=false;
+let uLat=41.3874,uLng=2.1686;
+let uMarker=null,sonarCircle=null;
+let activeMarkers=[];
+let globalMode=false,simActive=false,simInt=null;
+let simWps=[],simIdx=0,totDist=0;
+let sonarKm=5;
+let rutaLayer=null;
+let currentOfTab='mias';
+let selectedTags=[];
+let selComp='puntual';
+let profileMode='busco';
+let activeChatId=null;
+let currentRatingOffer=null;
+let ratingVal=0;
+let ratingDims={puntualidad:0,profesionalidad:0,trato:0,calidad:0};
+
+
+// ═══════════════════════════════════════════════
+// TOAST — mensaje rápido
+// ═══════════════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  if(!t)return;
+  t.textContent=msg;
+  t.classList.add('on');
+  clearTimeout(t._to);
+  t._to=setTimeout(()=>t.classList.remove('on'),2800);
+}
+
+// ═══════════════════════════════════════════════
+// DATOS: DOCS POR SECTOR Y TIPO
+// ═══════════════════════════════════════════════
+const SECTOR_DOCS={
+  hosteleria:{t:['Manipulación de alimentos','PRL básico (6h)','Primeros auxilios'],a:['Alta RETA','Manipulación de alimentos','Seguro RC profesional','Título FP Hostelería'],e:['CIF','Licencia de apertura','Alta IAE hostelería','Seguro RC local']},
+  construccion:{t:['Carné de obra (PRL 20h)','Trabajo en altura','Carné carretilla','Op. maquinaria'],a:['Alta RETA','Carné instalador eléctrico (REBT)','Seguro RC profesional'],e:['CIF','Alta IAE construcción','Seguro RC obras','PRL empresa']},
+  comercio:{t:['PRL comercio','Atención al cliente','Manipulación alimentos (si aplica)'],a:['Alta RETA','Contrato agencia (Ley 12/1992)','Carné conducir B'],e:['CIF','Alta IAE comercio','Licencia de apertura','Seguro RC']},
+  limpieza:{t:['PRL limpieza','Manejo de productos químicos'],a:['Alta RETA','Manejo de productos químicos','Seguro RC'],e:['CIF','Alta IAE servicios','Seguro RC','Convenio limpieza']},
+  logistica:{t:['Carné conducir B/C','Carné carretilla elevadora','ADR mercancías peligrosas','CAP transporte'],a:['Alta RETA','Tarjeta de transporte','CAP profesional','Seguro RC transporte'],e:['CIF','Licencia de transporte','Seguro RC mercancías']},
+  cuidados:{t:['Título TCAE','Cert. Atención Sociosanitaria','Primeros auxilios','PRL sociosanitario'],a:['Alta RETA','Cert. Sociosanitario','Primeros auxilios','Seguro RC'],e:['CIF','Autorización sanitaria','Seguro RC asistencial']},
+  admin:{t:['FP Administración y Finanzas','Cert. ACTIC ofimática','Inglés B2 Cambridge'],a:['Alta RETA','Grado ADE o Derecho','Cert. asesor fiscal','Seguro RC'],e:['CIF','Alta IAE asesoría','Seguro RC profesional']},
+  it:{t:['Grado Informática o FP DAM','Certs. AWS o Azure','Scrum Master'],a:['Alta RETA','Certificaciones técnicas','Portafolio GitHub','Seguro RC'],e:['CIF','Alta IAE informática','ISO 27001 (si aplica)']},
+  seguridad:{t:['TIP (Tarj. Identif. Profesional)','Habilitación vigilante de seguridad','PRL seguridad privada'],a:['Alta RETA','TIP vigente','Seguro RC'],e:['CIF','Autorización Min. Interior','Seguro RC obligatorio']},
+  belleza:{t:['FP Estética y Belleza','Título Peluquería','PRL peluquería'],a:['Alta RETA','Título Peluquería o Estética','Seguro RC'],e:['CIF','Licencia de apertura','Alta IAE peluquería']},
+  educacion:{t:['Grado Educación o Magisterio','Habilitación docente','Inglés B2'],a:['Alta RETA','Titulación universitaria','Cambridge CELTA','Seguro RC'],e:['CIF','Autorización conselleria','Seguro RC centro']},
+  eventos:{t:['PRL eventos','Manipulación de alimentos (si catering)','Primeros auxilios'],a:['Alta RETA','Portafolio profesional','Seguro RC','Derechos de autor'],e:['CIF','Alta IAE organización eventos','Seguro RC espectáculos']}
+};
+
+const DIM_LABELS={
+  puntualidad:'⏱ Puntualidad',calidad:'🎯 Calidad',actitud:'💪 Actitud',
+  comunicacion:'📞 Comunicación',repetiria:'🔄 Lo repetiría',
+  precio_justo:'💶 Precio justo',resolucion:'🔧 Resolución',
+  puntualidad_pagos:'💰 Puntualidad en pagos',claridad:'📋 Claridad',
+  trato:'🤝 Trato',condiciones:'🏠 Condiciones'
+};
+
+// ═══════════════════════════════════════════════
+// TEST 12 PREGUNTAS
+// ═══════════════════════════════════════════════
+const TESTS={
+  trabajador:{
+    dims:['puntualidad','calidad','actitud','comunicacion','repetiria'],
+    qs:[
+      {dim:'puntualidad',q:'Para una jornada que empieza a las 8:00, ¿cuándo sueles llegar?',ops:['15 min antes como mínimo','Justo a la hora','5-10 min tarde a veces','Muy irregular']},
+      {dim:'puntualidad',q:'Si hay un imprevisto y llegarás tarde, ¿qué haces?',ops:['Aviso con la máxima antelación posible','Aviso cuando sé que voy tarde','Intento llegar rápido sin avisar','Depende']},
+      {dim:'calidad',q:'Te encargan una tarea con instrucciones básicas. ¿Cómo actúas?',ops:['Pregunto si no queda claro antes de empezar','Empiezo y ajusto sobre la marcha','Hago lo que entiendo y ya veremos','Pido que me lo expliquen todo paso a paso']},
+      {dim:'calidad',q:'Al acabar el turno el trabajo no quedó al 100%. ¿Qué haces?',ops:['Lo menciono y propongo solución','Lo dejo para el siguiente turno','Mi turno acabó — ya está','Hago un esfuerzo extra']},
+      {dim:'actitud',q:'Acabaste tu trabajo y un compañero está desbordado. ¿Qué haces?',ops:['Le pregunto si necesita ayuda','Espero instrucciones del encargado','Aprovecho para descansar','Depende de si somos del mismo equipo']},
+      {dim:'actitud',q:'Hay un cambio de turno de última hora. ¿Cómo reaccionas?',ops:['Me adapto sin problema','Pregunto los motivos','Me cuesta adaptarme','Depende de si me afecta negativamente']},
+      {dim:'actitud',q:'Un cliente difícil se queja. ¿Cómo lo gestionas?',ops:['Mantengo la calma y busco solución','Escalo al encargado inmediatamente','Intento resolverlo aunque me cueste','A veces pierdo la paciencia']},
+      {dim:'comunicacion',q:'Recibes una instrucción que no entiendes del todo. ¿Qué haces?',ops:['Pido aclaración inmediatamente','Intento deducirlo yo solo','Empiezo y pregunto si hay problemas','Pregunto a un compañero']},
+      {dim:'comunicacion',q:'Detectas un problema que afecta al resultado. ¿Cuándo informas?',ops:['Inmediatamente al encargado','Solo si me lo preguntan','Intento resolverlo primero','Aviso al compañero más cercano']},
+      {dim:'repetiria',q:'Terminas un trabajo puntual. ¿Qué esperas?',ops:['Que me tengan en cuenta para futuras necesidades','Cobrar y ya se verá','Si fue bien me gustaría repetir','Solo si las condiciones mejoran']},
+      {dim:'repetiria',q:'Una empresa te llama por segunda vez. ¿Cómo lo interpretas?',ops:['Como señal de buen trabajo','Como algo normal','Me alegra pero no cambia mi actitud','Depende de las condiciones']},
+      {dim:'repetiria',q:'¿Con qué frecuencia recibes valoraciones positivas?',ops:['Habitualmente','A veces — depende del trabajo','Pocas veces','No lo sé — no dan feedback']},
+    ]
+  },
+  autonomo:{
+    dims:['puntualidad','calidad','precio_justo','resolucion','repetiria'],
+    qs:[
+      {dim:'puntualidad',q:'Tienes un servicio contratado a las 10:00. ¿Cuándo llegas?',ops:['10-15 min antes para preparar','Justo a la hora','Suelo llegar, a veces un poco tarde','Depende del tráfico']},
+      {dim:'puntualidad',q:'Un trabajo se alarga. ¿Cómo gestionas el siguiente encargo del día?',ops:['Aviso con antelación y propongo alternativas','Termino rápido aunque baje la calidad','Termino y asumo llegar tarde','Cancelo el siguiente']},
+      {dim:'calidad',q:'Detectas un detalle mejorable que el cliente no ha visto. ¿Qué haces?',ops:['Lo corrijo antes de irme','Lo menciono y decidimos juntos','Lo dejo — supera lo acordado','Depende del tiempo']},
+      {dim:'calidad',q:'El cliente no está satisfecho aunque cumpliste lo acordado. ¿Actúas?',ops:['Escucho y propongo solución','Explico por qué cumplí lo pactado','Ofrezco un descuento para cerrar','Depende de si tiene razón']},
+      {dim:'precio_justo',q:'¿Cómo estableces tu precio?',ops:['Según tiempo, dificultad y materiales — transparente','Tarifa fija','Negocio según lo que el cliente paga','Empiezo bajo y subo después']},
+      {dim:'precio_justo',q:'El trabajo resultó más complejo de lo previsto. ¿Cómo lo comunicas?',ops:['Lo hablo antes y acordamos el ajuste','Absorbo el extra — fue mi estimación','Lo informo al final con la factura','Depende de cuánto extra sea']},
+      {dim:'resolucion',q:'Aparece un problema inesperado no incluido en el presupuesto. ¿Qué haces?',ops:['Evalúo, informo y propongo opciones','Intento resolverlo como pueda','Paro hasta que el cliente decida','Lo incluyo en el precio']},
+      {dim:'resolucion',q:'El cliente pide algo fuera de tu especialidad. ¿Cómo respondes?',ops:['Soy honesto sobre mis límites y recomiendo a alguien','Acepto aunque no sea mi fuerte','Rechazo directamente','Depende de cuánto se aleja de lo que sé']},
+      {dim:'resolucion',q:'Un imprevisto personal el día de un servicio contratado. ¿Actúas?',ops:['Aviso con máxima antelación y busco alternativas','Cumplo aunque sea en condiciones no ideales','Cancelo y propongo nueva fecha','Depende de la gravedad']},
+      {dim:'repetiria',q:'Un cliente habitual pide descuento por volumen. ¿Cómo lo valoras?',ops:['Abierto si el volumen lo justifica','No hago descuentos — mi tarifa es mi tarifa','Negocio caso por caso','Depende del cliente']},
+      {dim:'repetiria',q:'¿Cuántos de tus clientes repiten o te recomiendan?',ops:['La mayoría — tengo clientela fidelizada','Un porcentaje razonable','Pocos — cada trabajo es puntual','No llevo seguimiento']},
+      {dim:'repetiria',q:'¿Cómo gestionas la relación después del servicio?',ops:['Hago seguimiento para confirmar satisfacción','Termino y espero que contacten','Facturo y cierre','Depende del cliente']},
+    ]
+  },
+  empresa:{
+    dims:['claridad','condiciones','puntualidad_pagos','trato','repetiria'],
+    qs:[
+      {dim:'claridad',q:'Al publicar una oferta, ¿cómo describís el puesto?',ops:['Con detalle: funciones, horario, lugar y condiciones','Con lo esencial — los candidatos preguntan','Descripción general y concretamos en entrevista','Depende del puesto']},
+      {dim:'claridad',q:'El primer día de un nuevo trabajador, ¿cómo organizáis la incorporación?',ops:['Protocolo claro: funciones, equipo, responsable','Presentación rápida y se integra solo','El encargado lo lleva al puesto directamente','Depende del volumen del momento']},
+      {dim:'condiciones',q:'¿Cómo valoráis el entorno de trabajo que ofrecéis?',ops:['Bueno — equipamiento adecuado y espacios seguros','Correcto para el tipo de trabajo','Mejorable — estamos en ello','No hemos evaluado formalmente']},
+      {dim:'condiciones',q:'Cuando el trabajador necesita materiales, ¿qué hacéis?',ops:['Los proporcionamos — nada sin acordarlo','Combinamos recursos propios y del trabajador','El trabajador suele traer lo que necesita','Depende del trabajo']},
+      {dim:'puntualidad_pagos',q:'¿Con qué regularidad pagáis en la fecha acordada?',ops:['Siempre a tiempo — innegociable','Casi siempre — algún retraso puntual','A veces hay retrasos','Es irregular']},
+      {dim:'puntualidad_pagos',q:'En un trabajo puntual a precio cerrado, ¿cómo gestionáis el pago?',ops:['Según lo acordado — precio y fecha pactados','Pagamos cuando podemos, normalmente rápido','Solemos pagar a 30 días','Depende del importe']},
+      {dim:'puntualidad_pagos',q:'¿Proporcionáis siempre documentación del pago?',ops:['Siempre — transparencia total','Casi siempre — algún caso informal','A veces — dependemos de la contabilidad','Raramente — pagamos en efectivo']},
+      {dim:'trato',q:'Un trabajador comete un error. ¿Cómo lo gestionáis?',ops:['Hablamos en privado y buscamos solución','Lo corregimos en el momento y ya','Según la gravedad puede tener consecuencias','Le pedimos explicaciones delante de otros']},
+      {dim:'trato',q:'Un trabajador pide cambio de turno por motivo personal. ¿Respondéis?',ops:['Lo valoramos y buscamos solución','Depende de las necesidades del negocio','Raramente es posible','No tenemos flexibilidad']},
+      {dim:'repetiria',q:'¿Con qué frecuencia repetís con los mismos trabajadores puntuales?',ops:['Frecuentemente — fidelizamos a los que trabajan bien','A veces — cuando coincide perfil y disponibilidad','Raramente','No lo hemos valorado']},
+      {dim:'repetiria',q:'¿Recomendaríais Hyreum a otras empresas?',ops:['Sí — la reputación verificada es un diferencial','Probablemente — depende de resultados','Aún es pronto','Necesitaría probarlo más']},
+      {dim:'repetiria',q:'Un trabajador puntual hace un trabajo excelente. ¿Qué hacéis?',ops:['Lo añadimos a contactos preferentes y damos feedback','Esperamos que se candidate si surge algo','Le decimos que lo tenemos en cuenta','No hacemos seguimiento']},
+    ]
+  }
+};
+const TEST_PTS=[4,3,2,1];
+
+// ═══════════════════════════════════════════════
+// REGISTRO POR PASOS — una sola función limpia
+// ═══════════════════════════════════════════════
+let regTipo='';
+let regStep=0;
+let regData={};
+let testIdx=0;
+let testAnswers={};
+let testQs=[];
+
+function regGo(n){
+  // Validaciones antes de avanzar
+  if(n===2 && regStep===1){
+    if(!regTipo){
+      showErr(document.getElementById('reg-err1'),'Selecciona un tipo de cuenta');
+      return;
+    }
+  }
+  if(n===3 && regStep===2){
+    const nombre=document.getElementById('reg-nombre')?document.getElementById('reg-nombre').value.trim():'';
+    const user=document.getElementById('reg-user')?document.getElementById('reg-user').value.trim():'';
+    const pass=document.getElementById('reg-pass')?document.getElementById('reg-pass').value.trim():'';
+    const email=document.getElementById('reg-email')?document.getElementById('reg-email').value.trim():'';
+    const err=document.getElementById('reg-err2');
+    if(!nombre||!user||!pass||!email){showErr(err,'Rellena todos los campos');return;}
+    if(pass.length<4){showErr(err,'Contraseña mínimo 4 caracteres');return;}
+    if(getUsers().find(function(u){return u.username===user.toLowerCase();})){showErr(err,'Ese usuario ya existe');return;}
+    var apellidos=document.getElementById('reg-apellidos')?document.getElementById('reg-apellidos').value.trim():'';
+    var cif=document.getElementById('reg-cif')?document.getElementById('reg-cif').value.trim():'';
+    regData={
+      nombre:nombre,apellidos:apellidos,email:email,cif:cif,
+      username:user.toLowerCase().replace(/[^a-z0-9_]/g,'_'),
+      password:pass
+    };
+    testIdx=0;
+    testAnswers={};
+    testQs=TESTS[regTipo].qs.slice();
+  }
+
+  // Ocultar todos los pasos
+  regStep=n;
+  var steps=['reg-p0','reg-p1','reg-p2','reg-p3','reg-p4'];
+  for(var i=0;i<steps.length;i++){
+    var el=document.getElementById(steps[i]);
+    if(el) el.style.display=(i===n)?'':'none';
+  }
+
+  // Acciones al mostrar el paso
+  if(n===2) regRenderFields();
+  if(n===3) regRenderQ();
+}
+
+function regSelTipo(t){
+  regTipo=t;
+  ['trabajador','autonomo','empresa'].forEach(function(x){
+    var el=document.getElementById('tc-'+x);
+    if(el) el.classList.toggle('sel',x===t);
+  });
+}
+
+function regRenderFields(){
+  var title=document.getElementById('reg-p2-title');
+  var fields=document.getElementById('reg-p2-fields');
+  if(!fields) return;
+  var labels={trabajador:'Tus datos',autonomo:'Tus datos profesionales',empresa:'Datos de empresa'};
+  if(title) title.textContent='Paso 2 de 3 · '+(labels[regTipo]||'Tus datos');
+  if(regTipo==='empresa'){
+    fields.innerHTML=
+      '<label class="au-label">Nombre del negocio</label>'+
+      '<input class="au-inp" id="reg-nombre" placeholder="Ej: Bar El Racó / Construccions Vidal SL" style="font-size:16px"/>'+
+      '<label class="au-label">CIF (orientativo)</label>'+
+      '<input class="au-inp" id="reg-cif" placeholder="Ej: B-43127865" style="font-size:16px"/>'+
+      '<label class="au-label">Email de contacto</label>'+
+      '<input class="au-inp" id="reg-email" type="email" placeholder="contacto@empresa.com" style="font-size:16px"/>'+
+      '<label class="au-label">Usuario</label>'+
+      '<input class="au-inp" id="reg-user" placeholder="sin espacios ni tildes" autocomplete="username" style="font-size:16px"/>'+
+      '<label class="au-label">Contraseña</label>'+
+      '<input class="au-inp" id="reg-pass" type="password" placeholder="mínimo 4 caracteres" autocomplete="new-password" style="font-size:16px"/>';
+  } else {
+    fields.innerHTML=
+      '<label class="au-label">Nombre</label>'+
+      '<input class="au-inp" id="reg-nombre" placeholder="Ej: María" style="font-size:16px"/>'+
+      '<label class="au-label">Apellidos</label>'+
+      '<input class="au-inp" id="reg-apellidos" placeholder="Ej: García López" style="font-size:16px"/>'+
+      '<label class="au-label">Email</label>'+
+      '<input class="au-inp" id="reg-email" type="email" placeholder="tu@email.com" style="font-size:16px"/>'+
+      '<label class="au-label">Usuario</label>'+
+      '<input class="au-inp" id="reg-user" placeholder="sin espacios ni tildes" autocomplete="username" style="font-size:16px"/>'+
+      '<label class="au-label">Contraseña</label>'+
+      '<input class="au-inp" id="reg-pass" type="password" placeholder="mínimo 4 caracteres" autocomplete="new-password" style="font-size:16px"/>';
+  }
+}
+
+function regRenderQ(){
+  var q=testQs[testIdx];
+  var pct=Math.round((testIdx/testQs.length)*100);
+  var bar=document.getElementById('reg-prog');
+  var dimLbl=document.getElementById('reg-dim-lbl');
+  var qTxt=document.getElementById('reg-q-txt');
+  var opts=document.getElementById('reg-q-opts');
+  var title=document.getElementById('reg-p3-title');
+  if(bar) bar.style.width=pct+'%';
+  if(dimLbl) dimLbl.textContent=DIM_LABELS[q.dim]||q.dim;
+  if(qTxt) qTxt.textContent=q.q;
+  if(title) title.textContent='Pregunta '+(testIdx+1)+' de '+testQs.length;
+  // Mezclar opciones
+  var order=[0,1,2,3].sort(function(){return Math.random()-.5;});
+  if(opts){
+    opts.innerHTML='';
+    for(var i=0;i<order.length;i++){
+      (function(idx,pts){
+        var btn=document.createElement('button');
+        btn.className='test-opt';
+        btn.textContent=q.ops[idx];
+        btn.onclick=function(){regAnswer(pts,this);};
+        opts.appendChild(btn);
+      })(order[i], TEST_PTS[order[i]]);
+    }
+  }
+}
+
+function regAnswer(pts,el){
+  var opts=document.querySelectorAll('.test-opt');
+  opts.forEach(function(o){o.classList.remove('sel');o.disabled=true;});
+  el.classList.add('sel');
+  var dim=testQs[testIdx].dim;
+  if(!testAnswers[dim]) testAnswers[dim]=[];
+  testAnswers[dim].push(pts);
+  setTimeout(function(){
+    testIdx++;
+    if(testIdx>=testQs.length) regFinish(false);
+    else regRenderQ();
+  },280);
+}
+
+function regSkipTest(){
+  if(!confirm('Si saltas el test tu puntuación será 1★ en todo y tendrás visibilidad mínima en el SONAR.\n\n¿Seguro que quieres saltarlo?')) return;
+  regFinish(true);
+}
+
+function regFinish(skipped){
+  var dims=TESTS[regTipo].dims;
+  var scores={};
+  if(skipped){
+    dims.forEach(function(d){scores[d]=1.0;});
+  } else {
+    dims.forEach(function(d){
+      var ans=testAnswers[d]||[];
+      var maxPts=ans.length*4;
+      var got=ans.reduce(function(a,b){return a+b;},0);
+      scores[d]=maxPts>0?parseFloat((got/maxPts*4+1).toFixed(1)):1.0;
+    });
+  }
+  var globalR=parseFloat((dims.reduce(function(s,d){return s+scores[d];},0)/dims.length).toFixed(1));
+  var id='u'+Date.now();
+  var AVCOLS=['#1B2E4B','#D4940A','#15803D','#1D4ED8','#B91C1C','#7C3AED','#0891B2','#EA580C'];
+  var color=AVCOLS[Math.floor(Math.random()*AVCOLS.length)];
+  var nombreFull=regTipo==='empresa'?regData.nombre:(regData.nombre+' '+regData.apellidos).trim();
+  var profile={
+    id:id,username:regData.username,password:regData.password,
+    nombre:nombreFull,email:regData.email,cif:regData.cif||'',
+    tipo:regTipo,color:color,rating:globalR,trabajos:0,
+    searchTags:[],offerTags:[],bio:'',historial:[],
+    dims:scores,testCompleted:!skipped,sonarActivo:true,createdAt:Date.now()
+  };
+  var us=getUsers();us.push(profile);saveUsers(us);
+  setUid(id);
+  regShowResult(scores,skipped,dims);
+}
+
+function regShowResult(scores,skipped,dims){
+  var sub=document.getElementById('reg-res-sub');
+  var dimsEl=document.getElementById('reg-res-dims');
+  var note=document.getElementById('reg-res-note');
+  if(sub) sub.textContent=skipped?'Puntuación mínima — completa el test cuando quieras':'Tu puntuación inicial en Hyreum';
+  if(dimsEl){
+    dimsEl.innerHTML='';
+    dims.forEach(function(d){
+      var v=scores[d]||1;
+      var pct=Math.round(v/5*100);
+      var col=v>=4?'#15803D':v>=3?'#D4940A':'#B91C1C';
+      var row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:12px';
+      row.innerHTML=
+        '<div style="font-size:11px;color:rgba(255,255,255,.7);width:105px;flex-shrink:0">'+(DIM_LABELS[d]||d)+'</div>'+
+        '<div style="flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden">'+
+          '<div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:3px"></div>'+
+        '</div>'+
+        '<div style="font-size:12px;font-weight:700;color:'+col+';width:28px;text-align:right">'+v+'</div>';
+      dimsEl.appendChild(row);
+    });
+  }
+  if(note) note.textContent=skipped
+    ?'⚠️ Sin test completado, tu visibilidad en el SONAR es mínima. Puedes completarlo desde tu Perfil.'
+    :'✅ Esta puntuación es tu punto de partida. Desaparecerá tras 5 trabajos verificados.';
+  regGo(4);
+}
+
+// ═══════════════════════════════════════════════
+// INSIGNIAS — cálculo automático
+// ═══════════════════════════════════════════════
+function calcInsignias(p){
+  var hist=p.historial||[];
+  var rated=hist.filter(function(h){return h.ratedByOther&&h.dims;});
+  var ins=[];
+  ins.push({label:'✅ VERIFICADO',ok:!!p.testCompleted,desc:p.testCompleted?'Test completado':'Completa el test inicial'});
+  if(rated.length>=3){
+    var avgP=rated.map(function(h){return h.dims.puntualidad||h.dims.puntualidad_pagos||0;}).reduce(function(a,b){return a+b;},0)/rated.length;
+    ins.push({label:'⏱ PUNTUAL',ok:avgP>=4.0,desc:'Puntualidad media > 4.0'});
+  } else ins.push({label:'⏱ PUNTUAL',ok:false,desc:'Necesitas 3+ trabajos con puntualidad > 4.0'});
+  ins.push({label:'🎯 PROFESIONAL',ok:(p.trabajos||0)>=5&&(p.rating||0)>=4.2,desc:'Media > 4.2 con 5+ trabajos'});
+  ins.push({label:'🏆 VETERANO',ok:(p.trabajos||0)>=10,desc:(p.trabajos||0)>=10?'10+ trabajos':'Faltan '+(10-(p.trabajos||0))+' trabajos'});
+  if(p.tipo==='empresa') ins.push({label:'🤝 BUEN EMPLEADOR',ok:(p.rating||0)>=4.0,desc:'Valorado > 4.0 como empleador'});
+  if(rated.length>0){
+    var anyLow=Object.values(rated[0].dims||{}).some(function(v){return v<2.5;});
+    if(anyLow) ins.push({label:'⚠️ CUESTIONADO',ok:true,bad:true,desc:'Alguna dimensión < 2.5'});
+  }
+  ins.push({label:'🥉 BRONCE',prox:true,desc:'Próximamente'});
+  ins.push({label:'🥈 PLATA',prox:true,desc:'Próximamente'});
+  ins.push({label:'🥇 ORO',prox:true,desc:'Próximamente'});
+  return ins;
+}
+
+function renderInsignias(p){
+  var ins=calcInsignias(p);
+  var html='<div class="ins-wrap">';
+  ins.forEach(function(i){
+    var cls=i.prox?'ins ins-prox':i.bad?'ins ins-bad':i.ok?'ins ins-ok':'ins ins-no';
+    html+='<span class="'+cls+'" title="'+i.desc+'">'+i.label+(i.prox?' (próximamente)':'')+'</span>';
+  });
+  html+='</div>';
+  return html;
+}
+
+// ═══════════════════════════════════════════════
+// CARTERA DOCUMENTOS
+// ═══════════════════════════════════════════════
+function getDocsForProfile(p){
+  var tags=(p.searchTags||[]).concat(p.offerTags||[]);
+  var sector='hosteleria';
+  if(tags.length>0){
+    var t0=tags[0].toLowerCase();
+    if(t0.indexOf('camar')>=0||t0.indexOf('cocin')>=0||t0.indexOf('baris')>=0||t0.indexOf('sala')>=0||t0.indexOf('barra')>=0) sector='hosteleria';
+    else if(t0.indexOf('alba')>=0||t0.indexOf('elect')>=0||t0.indexOf('font')>=0||t0.indexOf('pint')>=0||t0.indexOf('obr')>=0||t0.indexOf('refor')>=0) sector='construccion';
+    else if(t0.indexOf('depend')>=0||t0.indexOf('caj')>=0||t0.indexOf('repo')>=0) sector='comercio';
+    else if(t0.indexOf('limp')>=0||t0.indexOf('nete')>=0) sector='limpieza';
+    else if(t0.indexOf('repart')>=0||t0.indexOf('conduc')>=0||t0.indexOf('logist')>=0) sector='logistica';
+    else if(t0.indexOf('cuid')>=0||t0.indexOf('auxi')>=0||t0.indexOf('enfer')>=0||t0.indexOf('cangur')>=0) sector='cuidados';
+    else if(t0.indexOf('admin')>=0||t0.indexOf('recep')>=0||t0.indexOf('conta')>=0) sector='admin';
+    else if(t0.indexOf('dev')>=0||t0.indexOf('progr')>=0||t0.indexOf('tech')>=0) sector='it';
+    else if(t0.indexOf('vigil')>=0||t0.indexOf('guardi')>=0) sector='seguridad';
+    else if(t0.indexOf('peluc')>=0||t0.indexOf('barb')>=0||t0.indexOf('estet')>=0) sector='belleza';
+    else if(t0.indexOf('prof')>=0||t0.indexOf('monitor')>=0||t0.indexOf('educ')>=0) sector='educacion';
+    else if(t0.indexOf('event')>=0||t0.indexOf('azafa')>=0||t0.indexOf('foto')>=0) sector='eventos';
+  }
+  var sd=SECTOR_DOCS[sector]||SECTOR_DOCS.hosteleria;
+  var key=p.tipo==='empresa'?'e':p.tipo==='autonomo'?'a':'t';
+  return sd[key]||sd.t;
+}
+
+function renderDocCartera(p){
+  var docs=getDocsForProfile(p);
+  if(!docs||!docs.length) return '<div style="font-size:12px;color:var(--gray);padding:8px">Añade hashtags para ver los documentos recomendados.</div>';
+  var html='';
+  docs.forEach(function(d,i){
+    html+='<div class="doc-row">'+
+      '<div style="font-size:18px;flex-shrink:0">📄</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div class="doc-name">'+d+'</div>'+
+        '<div class="'+(i<2?'doc-ok':'doc-pend')+'">'+(i<2?'✅ Verificado':'⏳ Pendiente de subir')+'</div>'+
+      '</div>'+
+      '<button class="doc-upload-btn" onclick="showToast(\'Función disponible en la app oficial\')">Subir</button>'+
+    '</div>';
+  });
+  return html;
+}
+
+// ═══════════════════════════════════════════════
+// SONAR TOGGLE
+// ═══════════════════════════════════════════════
+function toggleSonar(v){
+  var p=getActive();
+  if(!p) return;
+  p.sonarActivo=v;
+  saveActive(p);
+  showToast(v?'📡 SONAR activado — eres visible':'📴 SONAR desactivado — no apareces en el mapa');
+  renderPerfil();
+}
+
+// ═══════════════════════════════════════════════
+// NAV actualizado para 6 pantallas
+// ═══════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════
+// EVA — Evaluation Virtual Assistant
+// ═══════════════════════════════════════════════
+var evaReady=false;
+var evaCnt=0;
+
+function initEva(){
+  var body=document.getElementById('eva-body');
+  if(!body||evaReady) return;
+  evaReady=true;
+  var p=getActive();
+  if(!p) return;
+  appendEvaMsg(buildEvaWelcome(p),'bot');
+}
+
+function buildEvaWelcome(p){
+  var n=p.nombre.split(' ')[0];
+  var tags=(p.searchTags||[]).concat(p.offerTags||[]);
+  if(!p.testCompleted&&!p.trabajos)
+    return 'Hola '+n+' 👋 Soy EVA.\n\nAún no completaste el test inicial. Tu puntuación es 1★ y tienes visibilidad mínima en el SONAR.\n\nVe a tu Perfil para completarlo cuando quieras.';
+  if(!tags.length)
+    return 'Hola '+n+'! 👋\n\nTu perfil no tiene hashtags todavía. Sin hashtags no apareces en el SONAR de nadie.\n\nVe a Perfil → + Añadir para configurarlos.';
+  if(p.tipo==='empresa'&&!getOffers().find(function(o){return o.authorId===p.id&&o.estado==='abierta';}))
+    return 'Hola '+n+'! 👋\n\nNo tienes ofertas activas. Sin oferta publicada tu visibilidad como empleador es mínima.\n\nPulsa 💼 Ofertas → + Nueva para publicar.';
+  if(!p.trabajos)
+    return 'Hola '+n+'! 👋 Perfil con '+tags.length+' hashtag'+(tags.length>1?'s':'')+'.\n\nActiva el SONAR y explora tu zona. Toca un perfil y pulsa ✋ Candidatarme.';
+  return 'Hola '+n+'! 👋\n\n'+p.trabajos+' trabajo'+(p.trabajos!==1?'s':'')+' completado'+(p.trabajos!==1?'s':'')+' · '+p.rating+'/5.\n\n¿En qué puedo ayudarte?';
+}
+
+var EVA_RESP=['El SONAR muestra en tiempo real quién está en tu radio — basado en posición actual, no en domicilio.','Cada valoración se registra en blockchain. Tu historial te pertenece a ti, no a Hyreum.','Los hashtags son la clave del matching. Cuantos más y más específicos, mejor te posicionas.','Las insignias se ganan por méritos: PUNTUAL si tu media supera 4.0, VETERANO con 10+ trabajos.','EVA Premium (2,99€/mes) incluye análisis avanzado de perfil, alertas de demanda y comparativas de mercado.'];
+
+function appendEvaMsg(text,type){
+  var body=document.getElementById('eva-body');
+  if(!body) return;
+  var d=document.createElement('div');
+  d.className='eva-bubble '+type;
+  d.innerHTML=text.replace(/\n/g,'<br>');
+  body.appendChild(d);
+  body.scrollTop=body.scrollHeight;
+  evaCnt++;
+  var badge=document.getElementById('eva-badge');
+  if(badge) badge.textContent=evaCnt;
+}
+
+function evaSend(){
+  var inp=document.getElementById('eva-inp');
+  var text=inp?inp.value.trim():'';
+  if(!text) return;
+  appendEvaMsg(text,'me');
+  inp.value='';
+  var tl=text.toLowerCase();
+  setTimeout(function(){
+    var resp=EVA_RESP[Math.floor(Math.random()*EVA_RESP.length)];
+    if(tl.indexOf('test')>=0||tl.indexOf('puntuación')>=0) resp='El test inicial genera tu puntuación en 5 dimensiones. Si lo saltaste tienes 1★. Puedes completarlo desde tu Perfil. Tras 5 trabajos verificados el test se sustituye por historial real.';
+    else if(tl.indexOf('sonar')>=0||tl.indexOf('mapa')>=0) resp='El SONAR muestra en tiempo real quién está en tu radio. Funciona en los dos sentidos: tú ves empresas, las empresas te ven a ti.';
+    else if(tl.indexOf('insignia')>=0||tl.indexOf('medalla')>=0) resp='7 insignias automáticas: VERIFICADO, PUNTUAL, PROFESIONAL, FIABLE, VETERANO, BUEN EMPLEADOR, CUESTIONADO. Las medallas BRONCE, PLATA y ORO se activarán en el lanzamiento oficial.';
+    else if(tl.indexOf('premium')>=0||tl.indexOf('precio')>=0) resp='EVA Premium a 2,99€/mes o 24,99€/año. Incluye análisis avanzado de perfil, alertas de demanda y comparativas de mercado.';
+    appendEvaMsg(resp,'bot');
+  },800+Math.random()*600);
+}
+
+
+
+// ═══════════════════════════════════════════════
+// SPLASH
+// ═══════════════════════════════════════════════
+function initSplash(){
+  let w=0;
+  const fill=document.getElementById('sp-fill');
+  const iv=setInterval(()=>{
+    w+=Math.random()*18+8;
+    if(w>=100){w=100;clearInterval(iv);
+      setTimeout(()=>{
+        document.getElementById('splash').classList.add('out');
+        checkAuth();
+      },300);
+    }
+    fill.style.width=w+'%';
+  },120);
+}
+
+function checkAuth(){
+  const uid=LS.get('uid');
+  if(uid&&getUsers().find(u=>u.id===uid)){
+    launchApp();
+  } else {
+    document.getElementById('auth').classList.add('show');
+    renderSavedProfiles();
+  }
+}
+
+// ═══════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════
+function authTab(tab,el){
+  document.querySelectorAll('.au-tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('au-login').style.display=tab==='login'?'':'none';
+  document.getElementById('au-reg').style.display=tab==='reg'?'':'none';
+}
+
+function doLogin(){
+  const u=document.getElementById('au-u').value.trim().toLowerCase();
+  const p=document.getElementById('au-p').value.trim();
+  const err=document.getElementById('au-err');
+  if(!u||!p){showErr(err,'Rellena todos los campos');return}
+  const found=getUsers().find(x=>x.username===u&&x.password===p);
+  if(found){setUid(found.id);launchApp();}
+  else showErr(err,'Usuario o contraseña incorrectos');
+}
+
+function doRegister(){
+  const name=document.getElementById('rg-name').value.trim();
+  const u=document.getElementById('rg-u').value.trim().toLowerCase().replace(/[^a-z0-9_]/g,'_');
+  const p=document.getElementById('rg-p').value.trim();
+  const tipo=document.getElementById('rg-tipo').value;
+  const err=document.getElementById('rg-err');
+  if(!name||!u||!p){showErr(err,'Rellena todos los campos');return}
+  if(p.length<4){showErr(err,'Contraseña mínimo 4 caracteres');return}
+  if(getUsers().find(x=>x.username===u)){showErr(err,'Ese usuario ya existe');return}
+  const id='u'+Date.now();
+  const profile={id,username:u,password:p,nombre:name,tipo,color:rC(),
+    rating:0,trabajos:0,searchTags:[],offerTags:[],bio:'',historial:[],createdAt:Date.now()};
+  const users=getUsers();users.push(profile);saveUsers(users);
+  setUid(id);launchApp();
+}
+
+function showErr(el,msg){el.textContent=msg;el.style.display='block';setTimeout(()=>el.style.display='none',3000)}
+
+function quickLogin(id){setUid(id);launchApp()}
+
+function renderSavedProfiles(){
+  const users=getUsers();
+  const wrap=document.getElementById('au-saved');
+  if(!users.length){wrap.innerHTML='';return}
+  wrap.innerHTML='<div class="au-saved-title">Acceso rápido</div><div class="au-saved-list">'+
+    users.map(u=>'<div class="au-chip" onclick="quickLogin(\'' + u.id + '\')">' + u.nombre.split(' ')[0] + '</div>').join('') + '</div>';
+}
+
+function doLogout(){
+  LS.del('uid');
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('auth').classList.add('show');
+  renderSavedProfiles();
+}
+
+// ═══════════════════════════════════════════════
+// LAUNCH APP
+// ═══════════════════════════════════════════════
+function launchApp(){
+  document.getElementById('auth').classList.remove('show');
+  document.getElementById('app').classList.add('show');
+  const p=getActive();if(!p)return;
+  const av=document.getElementById('tb-av');
+  av.textContent=initials(p.nombre);av.style.background=p.color;
+  genPool();
+  // requestAnimationFrame: esperar al primer paint del browser
+  // antes de renderizar contenido — evita pantallas en blanco al arrancar
+  requestAnimationFrame(function(){
+    renderOfertas('mias');
+    renderPerfil();
+    renderChat();
+    renderNotifs();
+    updateBadges();
+    // Secciones dinámicas del perfil
+    var p2=getActive();
+    var insEl=document.getElementById('perfil-insignias');
+    var docsEl=document.getElementById('perfil-docs');
+    if(insEl&&p2) insEl.innerHTML=renderInsignias(p2);
+    if(docsEl&&p2) docsEl.innerHTML=renderDocCartera(p2);
+    // Mapa: inicializar después de que el SONAR sea visible
+    setTimeout(initMap,300);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+const SCIDS=['sonar','ofertas','perfil','chat','notif','eva'];
+let curScreen=0;
+
+function nav(i){
+  SCIDS.forEach((s,j)=>{
+    document.getElementById('sc-'+s).classList.toggle('active',j===i);
+    document.querySelectorAll('.ni')[j].classList.toggle('active',j===i);
+  });
+  curScreen=i;
+  if(i===0){
+    // SONAR — inicializar mapa cuando la pantalla es visible
+    if(!mapReady){
+      setTimeout(initMap,200);
+    } else {
+      setTimeout(function(){try{map.invalidateSize();updateMap();}catch{}},150);
+    }
+  }
+  if(i===1)renderOfertas(currentOfTab);
+  if(i===2){
+    renderPerfil();
+    setTimeout(function(){
+      var p2=getActive();
+      var insEl=document.getElementById('perfil-insignias');
+      var docsEl=document.getElementById('perfil-docs');
+      if(insEl&&p2) insEl.innerHTML=renderInsignias(p2);
+      if(docsEl&&p2) docsEl.innerHTML=renderDocCartera(p2);
+    },50);
+  }
+  if(i===3)renderChat();
+  if(i===4){renderNotifs();const p=getActive();if(p)markNotifsRead(p.id);updateBadges();}
+  if(i===5)initEva();
+}
+
+function updateBadges(){
+  const p=getActive();if(!p)return;
+  const notifs=getNotifs(p.id).filter(n=>!n.read).length;
+  const unreadChats=Object.keys(getChats()).filter(cid=>cid.includes(p.id)&&(LS.get('unread_'+cid)||0)>0).length;
+  const badge=document.getElementById('tb-badge');
+  if(badge)badge.classList.toggle('show',notifs>0||unreadChats>0);
+  const nb=document.getElementById('ni-bdg-notif');
+  const cb=document.getElementById('ni-bdg-chat');
+  if(nb){nb.textContent=notifs||'';nb.classList.toggle('show',notifs>0);}
+  if(cb){cb.textContent=unreadChats||'';cb.classList.toggle('show',unreadChats>0);}
+}
+
+// ═══════════════════════════════════════════════
+// MAP / SONAR
+// ═══════════════════════════════════════════════
+function initMap(){
+  if(typeof L==='undefined'){setTimeout(initMap,500);return}
+  if(mapReady){
+    try{map.invalidateSize();updateMap();}catch{}
+    return;
+  }
+  try{
+    map=L.map('map',{center:[uLat,uLng],zoom:13,zoomControl:true,attributionControl:false,tap:false});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+    map.zoomControl.setPosition('bottomright');
+    mapReady=true;
+    var youIcon=L.divIcon({className:'',html:'<div class="you-dot"></div>',iconSize:[16,16],iconAnchor:[8,8]});
+    uMarker=L.marker([uLat,uLng],{icon:youIcon,zIndexOffset:1000}).addTo(map);
+    sonarCircle=L.circle([uLat,uLng],{radius:sonarKm*1000,color:'#1B2E4B',weight:1.5,fillColor:'#1B2E4B',fillOpacity:.04,dashArray:'5,5'}).addTo(map);
+    map.on('click',function(e){if(!globalMode){uLat=e.latlng.lat;uLng=e.latlng.lng;updateMap();}});
+    setTimeout(function(){try{map.invalidateSize();updateMap();}catch{}},300);
+  }catch(e){console.error('Map init error:',e);}
+}
+
+function updateMap(){
+  if(!mapReady)return;
+  const p=getActive();if(!p)return;
+  uMarker.setLatLng([uLat,uLng]);
+  sonarCircle.setLatLng([uLat,uLng]);
+  sonarCircle.setRadius(sonarKm*1000);
+  activeMarkers.forEach(m=>{try{map.removeLayer(m)}catch{}});
+  activeMarkers=[];
+  if(globalMode){
+    const step=Math.max(1,~~(simPool.length/400));
+    let cnt=0;
+    for(let i=0;i<simPool.length;i+=step){
+      const u=simPool[i];
+      const col=u.tipo==='autonomo'?'#1D4ED8':u.tipo==='empresa'?'#D4940A':u.tipo==='parado'?'#9CA3AF':'#D4940A';
+      const r=u.tipo==='empresa'?7:u.tipo==='parado'?3:4;
+      const m=L.circleMarker([u.lat,u.lng],{radius:r,fillColor:col,color:'white',weight:1,fillOpacity:.75,pane:'markerPane'});
+      m.on('click',()=>viewSimProfile(u));
+      m.addTo(map);activeMarkers.push(m);cnt++;
+    }
+    setMapStats(cnt,'—',nearestMun(uLat,uLng).substring(0,6));
+    document.getElementById('sonar-info').textContent='Vista global · '+cnt+' usuarios simulados';
+    return;
+  }
+  const myTags=[...(p.searchTags||[]),...(p.offerTags||[])].map(t=>t.toLowerCase().replace('#',''));
+  const radM=sonarKm*1000;
+  let matches=0;
+  simPool.forEach(u=>{
+    // Filtro bidireccional según el tipo del usuario activo:
+    // Si soy trabajador/parado → veo empresas y autónomos que ofrecen trabajo
+    // Si soy empresa → veo trabajadores y autónomos disponibles
+    const pTipo=p.tipo||'trabajador';
+    if(pTipo==='empresa'){
+      // Empresa ve: trabajadores y autónomos disponibles
+      if(u.tipo==='empresa'||u.tipo==='parado')return;
+    } else if(pTipo==='autonomo'){
+      // Autónomo ve: solo empresas (busca clientes)
+      if(u.tipo!=='empresa')return;
+    } else {
+      // Trabajador / parado ve: solo empresas (busca empleo)
+      if(u.tipo!=='empresa')return;
+    }
+    const dist=haversine(uLat,uLng,u.lat,u.lng);
+    if(dist>radM)return;
+    // Sin hashtags configurados = sin matches (matching estricto)
+    if(myTags.length===0)return;
+    const uTags=u.tags.map(t=>t.toLowerCase().replace('#',''));
+    const ok=myTags.some(t=>uTags.some(ut=>ut.includes(t)||t.includes(ut)));
+    if(!ok)return;
+    // Empresas: posición fija exacta (tienen dirección real)
+    // Autónomos: posición aproximada por privacidad (ruido pequeño)
+    const pLat = u.tipo==='empresa' ? u.lat : u.lat+(Math.random()-.5)*.0025;
+    const pLng = u.tipo==='empresa' ? u.lng : u.lng+(Math.random()-.5)*.0025;
+    const col=u.tipo==='autonomo'?'#1D4ED8':'#E8650A';
+    const r=u.tipo==='empresa'?9:5;
+    const wt=u.tipo==='empresa'?2.5:1.5;
+    const m=L.circleMarker([pLat,pLng],{radius:r,fillColor:col,color:'white',weight:wt,fillOpacity:.9});
+    m.on('click',()=>viewSimProfile(u));
+    m.addTo(map);activeMarkers.push(m);matches++;
+  });
+  setMapStats(matches,'—',nearestMun(uLat,uLng).substring(0,6));
+  const p2=getActive();
+  const hasTags2=[...(p2&&p2.searchTags||[]),...(p2&&p2.offerTags||[])].length>0;
+  document.getElementById('sonar-info').textContent=hasTags2
+    ? 'SONAR · '+matches+' coincidencia'+(matches!==1?'s':'')+' · '+sonarKm+'km  🔵=Autónomo 🟠=Empresa'
+    : '⚠️ Sin hashtags — ve a Perfil y configura lo que buscas u ofreces';
+}
+
+function setMapStats(matches,dist,zone){
+  document.getElementById('ms-m').textContent=matches;
+  document.getElementById('ms-d').textContent=dist;
+  document.getElementById('ms-z').textContent=zone;
+}
+
+function updateKm(v){
+  const val=parseInt(v);
+  const FREE_LIMIT=5;
+  if(val>FREE_LIMIT){
+    const extraKm=val-FREE_LIMIT;
+    const bloques=Math.ceil(extraKm/10);
+    const precio=bloques*1;
+    const ok=confirm('📡 Ampliar SONAR a '+val+' km\n\nLos primeros 5 km son gratuitos.\nAmpliación: '+extraKm+' km adicionales = '+precio+'€/mes\n\n¿Activar ampliación? (demo: se simula el pago)');
+    if(!ok){
+      // Resetear slider a 5km
+      document.querySelector('.km-slider').value=FREE_LIMIT;
+      document.getElementById('sonar-km').textContent=FREE_LIMIT+' km';
+      sonarKm=FREE_LIMIT;
+      updateMap();
+      return;
+    }
+    addNotif(getActive()&&getActive().id,{
+      tipo:'pago',texto:'SONAR ampliado a '+val+' km · '+precio+'€/mes simulado',
+      icon:'📡',time:Date.now(),read:false
+    });
+    updateBadges();
+  }
+  sonarKm=val;
+  document.getElementById('sonar-km').textContent=sonarKm+' km'+(val>FREE_LIMIT?' 💳':'');
+  updateMap();
+}
+
+function centerMap(){if(map)map.setView([uLat,uLng],14,{animate:true})}
+
+function toggleGlobal(){
+  globalMode=!globalMode;
+  const btn=document.getElementById('fab-g');
+  btn.classList.toggle('active',globalMode);
+  if(globalMode)map.setView([41.5,1.9],9,{animate:true});
+  else map.setView([uLat,uLng],13,{animate:true});
+  updateMap();
+}
+
+function toggleSim(){
+  simActive=!simActive;
+  const btn=document.getElementById('fab-s');
+  btn.classList.toggle('active',simActive);
+  btn.textContent=simActive?'⏸':'🚶';
+  if(simActive){genWps();simInt=setInterval(simStep,2000);}
+  else clearInterval(simInt);
+}
+
+function genWps(){
+  simWps=[{lat:uLat,lng:uLng}];
+  for(let i=0;i<10;i++){
+    const a=Math.random()*Math.PI*2,r=.004+Math.random()*.018;
+    simWps.push({lat:uLat+r*Math.cos(a),lng:uLng+r*Math.sin(a)});
+  }
+  simIdx=0;
+}
+
+function simStep(){
+  if(!simWps.length||simIdx>=simWps.length){simIdx=0;genWps();return}
+  const tgt=simWps[simIdx];
+  const spd=.00009;
+  const dLa=tgt.lat-uLat,dLn=tgt.lng-uLng;
+  const dist=Math.sqrt(dLa*dLa+dLn*dLn);
+  if(dist<.0002){simIdx++;return}
+  const prev={lat:uLat,lng:uLng};
+  uLat+=dLa/dist*Math.min(spd,dist);
+  uLng+=dLn/dist*Math.min(spd,dist);
+  totDist+=haversine(prev.lat,prev.lng,uLat,uLng)/1000;
+  document.getElementById('ms-d').textContent=totDist.toFixed(2)+'km';
+  tickPool();
+  updateMap();
+  if(map)map.panTo([uLat,uLng],{animate:true,duration:1.8});
+}
+
+function tickPool(){
+  simPool.forEach(u=>{
+    if(u.tipo==='empresa')return;
+    u.phase+=.055;
+    u.lat+=u.dlat*Math.sin(u.phase);
+    u.lng+=u.dlng*Math.cos(u.phase);
+  });
+}
+
+function showRuta(destLat,destLng,nombre,info){
+  if(rutaLayer){try{map.removeLayer(rutaLayer)}catch{}}
+  rutaLayer=L.polyline([[uLat,uLng],[destLat,destLng]],{color:'#15803D',weight:4,opacity:.82,dashArray:'7,5'}).addTo(map);
+  map.fitBounds([[uLat,uLng],[destLat,destLng]],{padding:[50,50]});
+  document.getElementById('ruta-title').textContent=nombre;
+  document.getElementById('ruta-sub').textContent=info||'Trabajo aceptado · Sigue la ruta';
+  document.getElementById('ruta-banner').classList.add('show');
+  nav(0);
+}
+
+function closeRuta(){
+  document.getElementById('ruta-banner').classList.remove('show');
+  if(rutaLayer){try{map.removeLayer(rutaLayer)}catch{};rutaLayer=null}
+}
+
+// ═══════════════════════════════════════════════
+// VIEW SIM PROFILE
+// ═══════════════════════════════════════════════
+function viewSimProfile(u){
+  const p=getActive();
+  const s=HASHTAG_LIB[u.sector];
+  const tl=tipoLabel(u.tipo);
+  const ini=initials(u.nombre);
+
+  const DIMS_CONTRATANTE=[
+    {k:'puntualidad_pagos',l:'Puntualidad en pagos',ico:'💰'},
+    {k:'claridad',l:'Claridad de instrucciones',ico:'📋'},
+    {k:'trato',l:'Trato y respeto',ico:'🤝'},
+    {k:'condiciones',l:'Condiciones de trabajo',ico:'🏠'},
+    {k:'repetiria',l:'Repetiría trabajar aquí',ico:'🔄'},
+  ];
+  const DIMS_TRABAJADOR=[
+    {k:'puntualidad',l:'Puntualidad',ico:'⏱'},
+    {k:'calidad',l:'Calidad del trabajo',ico:'🎯'},
+    {k:'actitud',l:'Actitud y compromiso',ico:'💪'},
+    {k:'comunicacion',l:'Comunicación',ico:'📞'},
+    {k:'repetiria',l:'Lo volvería a contratar',ico:'🔄'},
+  ];
+  const DIMS_AUTONOMO=[
+    {k:'puntualidad',l:'Puntualidad',ico:'⏱'},
+    {k:'calidad',l:'Calidad del trabajo',ico:'🎯'},
+    {k:'precio_justo',l:'Precio justo al resultado',ico:'💶'},
+    {k:'resolucion',l:'Resolución de problemas',ico:'🔧'},
+    {k:'repetiria',l:'Lo volvería a contratar',ico:'🔄'},
+  ];
+
+  let dimsMain, dimsTitulo;
+  if(u.tipo==='empresa'){
+    dimsMain=DIMS_CONTRATANTE;
+    dimsTitulo='Cómo valoran sus empleados y proveedores';
+  } else if(u.tipo==='autonomo'){
+    dimsMain=DIMS_AUTONOMO;
+    dimsTitulo='Cómo valoran su trabajo';
+  } else {
+    dimsMain=DIMS_TRABAJADOR;
+    dimsTitulo='Cómo valoran su trabajo';
+  }
+
+  function renderBars(dimDefs,data){
+    if(!data)return '';
+    return dimDefs.map(function(d){
+      var v=data[d.k]||0;
+      var pct=Math.round((v/5)*100);
+      var color=v>=4?'#15803D':v>=3?'#D4940A':'#B91C1C';
+      return '<div style="margin-bottom:9px">'+
+        '<div style="display:flex;justify-content:space-between;margin-bottom:3px">'+
+          '<span style="font-size:11px;color:var(--text2)">'+d.ico+' '+d.l+'</span>'+
+          '<span style="font-size:11px;font-weight:700;color:'+color+'">'+v+'</span>'+
+        '</div>'+
+        '<div style="height:5px;background:var(--gray3);border-radius:3px;overflow:hidden">'+
+          '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:3px"></div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  var starsH=[1,2,3,4,5].map(function(i){
+    return '<span class="star-ic '+(i<=Math.round(u.rating)?'on':'off')+'">★</span>';
+  }).join('');
+
+  var tagsH=(u.tags.length?u.tags:['Sin categoría']).map(function(t){
+    return '<span class="tag-pill tag-pill-navy">'+t+'</span>';
+  }).join('');
+
+  var convenioH=s?('<div class="prof-block">'+
+    '<div class="prof-block-head"><div class="prof-block-title">Convenio aplicable</div></div>'+
+    '<div style="font-size:12px;color:var(--text2)">'+s.icon+' '+s.convenio+'</div>'+
+    '</div>'):'';
+
+  // Ficha secundaria: autónomo que también contrató servicios
+  var secH='';
+  if(u.tipo==='autonomo'&&u.dimsContratante){
+    secH='<div class="prof-block">'+
+      '<div class="prof-block-head"><div class="prof-block-title">Como cliente (cuando contrató servicios)</div></div>'+
+      renderBars(DIMS_CONTRATANTE,u.dimsContratante)+
+    '</div>';
+  }
+
+  document.getElementById('pv-title').textContent=u.nombre;
+  document.getElementById('pv-content').innerHTML=
+    '<div class="prof-hero">'+
+      '<div class="prof-av" style="background:'+u.color+'">'+ini+'</div>'+
+      '<div class="prof-name">'+u.nombre+'</div>'+
+      '<div class="prof-type">'+tl+' &middot; '+u.mun+'</div>'+
+      '<div class="prof-stars">'+starsH+
+        '<span class="prof-rv">'+u.rating+'</span>'+
+        '<span class="prof-rc">('+u.trabajos+' trabajos verificados)</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="divider-8"></div>'+
+    '<div class="prof-block">'+
+      '<div class="prof-block-head"><div class="prof-block-title">Categoría</div></div>'+
+      '<div class="tag-list">'+tagsH+'</div>'+
+    '</div>'+
+    convenioH+
+    '<div class="prof-block">'+
+      '<div class="prof-block-head">'+
+        '<div class="prof-block-title">'+dimsTitulo+'</div>'+
+        '<div style="font-size:10px;color:var(--gray)">'+u.trabajos+' valoraciones</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;padding:10px;background:var(--bg);border-radius:10px">'+
+        '<div style="font-size:32px;font-weight:800;color:var(--navy);line-height:1">'+u.rating+'</div>'+
+        '<div>'+
+          '<div style="color:var(--gold);font-size:13px">'+starsH+'</div>'+
+          '<div style="font-size:10px;color:var(--gray);margin-top:2px">Nota global verificada</div>'+
+        '</div>'+
+      '</div>'+
+      renderBars(dimsMain,u.dims)+
+    '</div>'+
+    secH+
+    '<div style="padding:14px">'+
+      '<button class="save-btn" onclick="applyToSim(\''+u.id+'\')">✋ Apuntarme</button>'+
+      '<div style="font-size:10px;color:var(--gray);text-align:center;margin-top:8px">'+
+        'El chat se abre cuando la otra parte te acepta'+
+      '</div>'+
+    '</div>';
+
+  document.getElementById('profile-view').classList.add('show');
+}
+
+function closeProfileView(){document.getElementById('profile-view').classList.remove('show')}
+
+function contactSim(sid){
+  const u=simPool.find(x=>x.id===sid);if(!u)return;
+  closeProfileView();
+  openChatWith({id:u.id,nombre:u.nombre,color:u.color,tipo:u.tipo,sub:u.mun});
+}
+
+function applyToSim(sid){
+  const u=simPool.find(x=>x.id===sid);if(!u)return;
+  closeProfileView();
+  const p=getActive();if(!p)return;
+
+  const offers=getOffers();
+  const existingOffer=offers.find(o=>o.simId===sid);
+  if(existingOffer&&existingOffer.candidates.includes(p.id)){
+    alert('Ya te has apuntado a esta oferta');return;
+  }
+
+  // Crear oferta simulada
+  const offerId='sim_of_'+sid+'_'+Date.now();
+  const simOffer={
+    id:offerId, simId:sid,
+    authorId:sid, authorName:u.nombre, authorColor:u.color,
+    titulo:(u.tipo==='empresa'?u.nombre+' busca ':u.nombre+' ofrece ')+(u.tags[0]||u.sector),
+    sector:u.sector, tags:u.tags,
+    vacantes:u.tipo==='empresa'?Math.floor(Math.random()*2)+1:1,
+    fecha:'', hora:'',
+    duracion:u.tipo==='empresa'?'A convenir':'Por proyecto',
+    lugar:u.mun, compTipo:'negociar',
+    importe:'', contrato:'', estado:'abierta',
+    candidates:[p.id], accepted:[], rejected:[],
+    createdAt:Date.now(), isSimulated:true
+  };
+  offers.unshift(simOffer);
+  saveOffers(offers);
+
+  alert('✋ Candidatura enviada a '+u.nombre+'\n\nRecibirás respuesta en unos segundos.');
+  nav(1);
+  // Simular respuesta automática: 70% aceptado, 30% rechazado
+  const DELAY = 3000 + Math.random()*4000;
+  setTimeout(function(){
+    simRespond(offerId, sid, Math.random()<0.70);
+  }, DELAY);
+}
+
+const MOTIVOS_RECHAZO=[
+  'La vacante ya ha sido cubierta con otro candidato.',
+  'Buscan un perfil con más experiencia en el sector.',
+  'Han decidido no contratar por el momento.',
+  'El horario no encaja con su necesidad actual.',
+  'Prefieren un candidato de la zona.',
+];
+
+function simRespond(offerId, sid, aceptado){
+  const p=getActive();if(!p)return;
+  const offers=getOffers();
+  const idx=offers.findIndex(o=>o.id===offerId);
+  if(idx<0)return;
+  const o=offers[idx];
+  const u=simPool.find(x=>x.id===sid);
+  const nombre=o.authorName||'La empresa';
+
+  if(aceptado){
+    // Aceptar
+    if(!o.accepted)o.accepted=[];
+    o.accepted.push(p.id);
+    o.estado='cerrada';
+    // Simular que el trabajo termina y ambos se puntuan
+    if(!o.completedBy)o.completedBy=[];
+    o.completedBy.push(p.id);
+    o.completedBy.push(sid);
+    saveOffers(offers);
+    addNotif(p.id,{
+      tipo:'aceptado',
+      texto:'✅ '+nombre+' te ha aceptado para: '+o.titulo,
+      icon:'✅', time:Date.now(), read:false
+    });
+    updateBadges();
+    // Actualizar badges y abrir valoración
+    renderOfertas('candidaturas');
+    // Simular que el trabajo se completa y viene la valoración
+    setTimeout(function(){
+      addNotif(p.id,{
+        tipo:'completado',
+        texto:'Trabajo completado con '+nombre+'. ¡Valora cómo fue!',
+        icon:'⭐', time:Date.now(), read:false
+      });
+      updateBadges();
+      // Dar puntuación automática al usuario (la empresa le puntua)
+      autoRateUser(p, o, u);
+      // Abrir modal de valoración para que el usuario puntue a la empresa
+      currentRatingOffer=offerId;
+      ratingDims={puntualidad_pagos:0,claridad:0,trato:0,condiciones:0,repetiria:0};
+      ['puntualidad_pagos','claridad','trato','condiciones','repetiria'].forEach(function(dim){
+        var el=document.getElementById('star-'+dim);
+        if(el)el.querySelectorAll('.star-tap').forEach(function(s){s.textContent='☆';});
+      });
+      document.getElementById('rating-comment').value='';
+      var who=document.getElementById('rating-who');
+      if(who)who.textContent='Valora a: '+nombre;
+      document.getElementById('rating-overlay').classList.add('open');
+    }, 1500);
+  } else {
+    // Rechazar
+    if(!o.rejected)o.rejected=[];
+    o.rejected.push(p.id);
+    o.estado='cerrada';
+    const motivo=MOTIVOS_RECHAZO[~~(Math.random()*MOTIVOS_RECHAZO.length)];
+    o.motivoRechazo=motivo;
+    saveOffers(offers);
+    addNotif(p.id,{
+      tipo:'rechazado',
+      texto:'❌ '+nombre+' no ha seleccionado tu candidatura. '+motivo,
+      icon:'❌', time:Date.now(), read:false
+    });
+    updateBadges();
+    renderOfertas('candidaturas');
+    alert('❌ '+nombre+' no ha seleccionado tu candidatura.\n\n'+motivo);
+  }
+}
+
+function autoRateUser(p, o, u){
+  // La empresa/autónomo puntua al usuario automáticamente
+  const baseVal=3.5+Math.random()*1.2;
+  const rD=function(){return Math.min(5,Math.max(1,+(baseVal+(Math.random()-.5)*.8).toFixed(1)));};
+  const dims={puntualidad:rD(),calidad:rD(),actitud:rD(),comunicacion:rD(),repetiria:rD()};
+  const avg=+(Object.values(dims).reduce(function(a,b){return a+b},0)/5).toFixed(1);
+  if(!p.historial)p.historial=[];
+  p.historial.unshift({
+    titulo:o.titulo||'Trabajo',
+    empresa:o.authorName||'',
+    sector:o.sector||'',
+    rating:avg,
+    dims:dims,
+    fecha:new Date().toLocaleDateString('es-ES'),
+    rated:true,
+    ratedByOther:true
+  });
+  const allR=p.historial.filter(function(h){return h.rated&&h.ratedByOther;}).map(function(h){return h.rating;});
+  p.rating=+(allR.reduce(function(a,b){return a+b},0)/allR.length).toFixed(1);
+  p.trabajos=(p.trabajos||0)+1;
+  saveActive(p);
+  renderPerfil();
+}
+
+// ═══════════════════════════════════════════════
+// OFERTAS
+// ═══════════════════════════════════════════════
+function ofTab(tab,el){
+  currentOfTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  renderOfertas(tab);
+}
+
+function renderOfertas(tab){
+  const p=getActive();if(!p)return;
+  const offers=getOffers();
+  const list=document.getElementById('ofertas-list');
+  let items=[];
+  if(tab==='mias')items=offers.filter(o=>o.authorId===p.id&&!o.isSimulated);
+  else items=offers.filter(o=>(o.candidates||[]).includes(p.id)&&!o.isSimulated||
+    (o.isSimulated&&(o.candidates||[]).includes(p.id)));
+  if(!items.length){
+    const msgs={mias:'Pulsa "+ Nueva" para publicar tu primera oferta',candidaturas:'Explora el SONAR, toca un perfil y pulsa Apuntarme'};
+    const icos={mias:'📝',candidaturas:'🙋'};
+    list.innerHTML='<div class="empty-state"><div class="empty-ico">'+icos[tab]+'</div><div class="empty-title">Sin resultados</div><div class="empty-sub">'+msgs[tab]+'</div></div>';
+    return;
+  }
+  list.innerHTML='<div class="offer-list">'+items.map(o=>renderOCard(o,p)).join('')+'</div>';
+}
+
+function renderOCard(o,p){
+  const isMine=o.authorId===p.id&&!o.isSimulated;
+  const isCand=(o.candidates||[]).includes(p.id);
+  const isAccepted=(o.accepted||[]).includes(p.id);
+  const vacLeft=(o.vacantes||1)-(o.accepted||[]).length;
+  const isCompleted=o.completedBy&&o.completedBy.includes(p.id);
+  const statusBadge=o.estado==='abierta'?'<span class="badge badge-green">Abierta</span>':'<span class="badge badge-gray">Cerrada</span>';
+  const isRejected=(o.rejected||[]).includes(p.id);
+  const myBadge=isAccepted?'<span class="badge badge-green">✓ Aceptado</span>':
+    isRejected?'<span class="badge" style="background:#FEE2E2;color:#B91C1C">✗ No seleccionado</span>':
+    isCand?'<span class="badge badge-gold">⏳ Pendiente</span>':'';
+  const comp=o.compTipo==='negociar'?'💬 A negociar':o.compTipo==='contrato'?'📄 '+(o.contrato||'Según convenio'):o.importe?'💶 '+o.importe+'€':'—';
+  const motivoH=isRejected&&o.motivoRechazo?'<div style="font-size:10px;color:#B91C1C;margin-top:4px;padding:0 13px 8px">'+o.motivoRechazo+'</div>':'';
+  const chips=[(o.tags||[]).map(t=>'<span class="oc-chip">'+t+'</span>').join(''),o.duracion?'<span class="oc-chip">⏱ '+o.duracion+'</span>':'',o.vacantes?'<span class="oc-chip">👥 '+vacLeft+'/'+o.vacantes+'</span>':'',o.fecha?'<span class="oc-chip">📅 '+o.fecha+'</span>':'',o.hora?'<span class="oc-chip">🕐 '+o.hora+'</span>':''].join('');
+  let btns='';
+  if(isMine&&(o.candidates||[]).length)
+    btns+='<button class="btn-sm btn-sm-navy" onclick="event.stopPropagation();manageCands(\''+o.id+'\')">Candidatos ('+o.candidates.length+')</button>';
+  if(isMine&&o.estado==='abierta')
+    btns+='<button class="btn-sm btn-sm-ghost" onclick="event.stopPropagation();closeOffer(\''+o.id+'\')">Cerrar</button>';
+  if(isCand&&!isMine&&!isRejected){
+    if(isAccepted)
+      btns+='<button class="btn-sm btn-sm-navy" onclick="event.stopPropagation();chatFromOffer(\''+o.id+'\')">💬 Chat</button>';
+    if(isAccepted&&!isCompleted)
+      btns+='<button class="btn-sm btn-sm-green" onclick="event.stopPropagation();showRutaOffer(\''+o.id+'\')">🧭 Ruta</button>';
+    if(isAccepted&&!isCompleted)
+      btns+='<button class="btn-sm btn-sm-ghost" onclick="event.stopPropagation();markComplete(\''+o.id+'\')">✓ Completado</button>';
+  }
+  return '<div class="ocard"><div class="oc-body"><div class="oc-top"><div class="oc-title">'+(o.titulo||'Oferta')+'<br><span style="font-size:10px;font-weight:400;color:var(--gray)">'+(o.lugar||'')+'</span></div><div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">'+statusBadge+myBadge+'</div></div><div class="oc-meta">'+chips+'</div></div>'+motivoH+'<div class="oc-foot"><div class="oc-comp">'+comp+'</div><div class="oc-btns">'+btns+'</div></div></div>';
+}
+
+function chatFromOffer(offerId){
+  const o=getOffers().find(x=>x.id===offerId);if(!o)return;
+  const p=getActive();if(!p)return;
+  // El "otro" es el autor de la oferta
+  const otherId=o.authorId;
+  // Buscar en usuarios reales primero, luego en pool simulado
+  const other=getUsers().find(u=>u.id===otherId)||simPool.find(u=>u.id===otherId);
+  if(other){
+    openChatWith({id:other.id,nombre:other.nombre||other.nombre,color:other.color,tipo:other.tipo,sub:o.lugar||''});
+  } else {
+    // Oferta simulada — usar datos guardados en la oferta
+    openChatWith({id:otherId,nombre:o.authorName||'Usuario',color:o.authorColor||'#1B2E4B',tipo:'empresa',sub:o.lugar||''});
+  }
+}
+
+function applyOffer(id){
+  const offers=getOffers();const idx=offers.findIndex(o=>o.id===id);if(idx<0)return;
+  const p=getActive();
+  if(!offers[idx].candidates)offers[idx].candidates=[];
+  if(offers[idx].candidates.includes(p.id)){alert('Ya estás apuntado/a a esta oferta');return}
+  offers[idx].candidates.push(p.id);
+  saveOffers(offers);
+  addNotif(offers[idx].authorId,{tipo:'candidato',texto:p.nombre+' se ha apuntado a tu oferta: '+(offers[idx].titulo||'sin título'),icon:'🙋',time:Date.now()});
+  updateBadges();
+  renderOfertas(currentOfTab);
+  alert('✅ Candidatura enviada. El anunciante recibirá tu solicitud.');
+}
+
+function closeOffer(id){
+  if(!confirm('¿Cerrar esta oferta?'))return;
+  const offers=getOffers();const idx=offers.findIndex(o=>o.id===id);if(idx<0)return;
+  offers[idx].estado='cerrada';saveOffers(offers);renderOfertas(currentOfTab);
+}
+
+function showRutaOffer(id){
+  const o=getOffers().find(x=>x.id===id);if(!o)return;
+  const mun=MUNICIPIOS.find(m=>m.n===o.lugar)||MUNICIPIOS[~~(Math.random()*MUNICIPIOS.length)];
+  showRuta(mun.lat+.002*(Math.random()-.5),mun.lng+.002*(Math.random()-.5),o.titulo||'Trabajo aceptado',o.fecha&&o.hora?'📅 '+o.fecha+' · '+o.hora:'Trabajo aceptado');
+}
+
+function markComplete(id){
+  if(!confirm('¿Confirmar que has completado este trabajo?'))return;
+  const offers=getOffers();const idx=offers.findIndex(o=>o.id===id);if(idx<0)return;
+  const p=getActive();
+  if(!offers[idx].completedBy)offers[idx].completedBy=[];
+  offers[idx].completedBy.push(p.id);
+  const bothDone=offers[idx].completedBy.length>=2;
+  if(bothDone){offers[idx].estado='cerrada';}
+  saveOffers(offers);
+  renderOfertas(currentOfTab);
+  openRating(id);
+}
+
+function manageCands(offerId){
+  const offers=getOffers();const o=offers.find(x=>x.id===offerId);if(!o)return;
+  const users=getUsers();
+  const cands=(o.candidates||[]).map(id=>users.find(u=>u.id===id)).filter(Boolean);
+  const sheet=document.getElementById('cands-sheet');
+  sheet.innerHTML='<div class="sheet-handle"></div><div class="sheet-title">Candidatos</div><div class="sheet-sub">'+(o.titulo||'')+'</div>'+
+    (cands.length?cands.map(c=>{
+      const isAcc=(o.accepted||[]).includes(c.id);
+      const vacLeft=(o.vacantes||1)-(o.accepted||[]).length;
+      return '<div class="cand-item"><div class="cand-av" style="background:'+c.color+'">'+initials(c.nombre)+'</div>'+
+        '<div class="cand-info"><div class="cand-name">'+c.nombre+'</div><div class="cand-type">'+tipoLabel(c.tipo)+'</div></div>'+
+        '<div class="cand-btns">'+
+        (isAcc?'<span class="badge badge-green">Aceptado</span>':
+          (vacLeft>0?'<button class="btn-sm btn-sm-navy" onclick="acceptCand('+offerId+','+c.id+')">Aceptar</button>':'<span class="badge badge-gray">Lleno</span>')+
+          '<button class="btn-sm btn-sm-ghost" onclick="chatWithCand('+c.id+')">Chat</button>')+
+        '</div></div>';
+    }).join(''):
+    '<div class="empty-state"><div class="empty-ico">🙋</div><div class="empty-title">Sin candidatos aún</div></div>');
+  document.getElementById('cands-overlay').classList.add('open');
+}
+
+function acceptCand(offerId,candId){
+  const offers=getOffers();const idx=offers.findIndex(o=>o.id===offerId);if(idx<0)return;
+  if(!offers[idx].accepted)offers[idx].accepted=[];
+  if(!offers[idx].accepted.includes(candId)){
+    offers[idx].accepted.push(candId);
+    const vacLeft=(offers[idx].vacantes||1)-offers[idx].accepted.length;
+    if(vacLeft<=0)offers[idx].estado='cerrada';
+  }
+  saveOffers(offers);
+  const p=getActive();const cUser=getUsers().find(u=>u.id===candId);
+  if(cUser){addNotif(candId,{tipo:'aceptado',texto:'¡Has sido aceptado/a en: '+(offers[idx].titulo||'una oferta')+'!',icon:'✅',time:Date.now()});}
+  openChatWith({id:candId,nombre:cUser?cUser.nombre:'Usuario',color:cUser?cUser.color:'#1B2E4B',tipo:cUser?cUser.tipo:'trabajador',sub:'Candidato aceptado'});
+  document.getElementById('cands-overlay').classList.remove('open');
+  updateBadges();
+}
+
+function chatWithCand(candId){
+  const cUser=getUsers().find(u=>u.id===candId);
+  document.getElementById('cands-overlay').classList.remove('open');
+  openChatWith({id:candId,nombre:cUser?cUser.nombre:'Usuario',color:cUser?cUser.color:'#1B2E4B',tipo:cUser?cUser.tipo:'trabajador',sub:''});
+}
+
+// CREATE OFFER
+function openCreateOffer(){
+  selectedTags=[];selComp='puntual';
+  document.getElementById('of-tags-wrap').innerHTML='';
+  document.getElementById('of-tag-inp').value='';
+  document.getElementById('of-sector').value='';
+  document.getElementById('of-desc').value='';
+  document.getElementById('of-vacantes').value='1';
+  document.getElementById('of-fecha').value='';
+  document.getElementById('of-hora').value='';
+  document.getElementById('of-lugar').value='';
+  document.getElementById('of-importe').value='';
+  document.querySelectorAll('.comp-opt').forEach((o,i)=>o.classList.toggle('sel',i===0));
+  document.getElementById('comp-puntual').style.display='';
+  document.getElementById('comp-contrato').style.display='none';
+  document.getElementById('create-overlay').classList.add('open');
+}
+
+function selCompOpt(tipo,el){
+  selComp=tipo;
+  document.querySelectorAll('.comp-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('comp-puntual').style.display=tipo==='puntual'?'':'none';
+  document.getElementById('comp-contrato').style.display=tipo==='contrato'?'':'none';
+}
+
+function onSectorChange(sector){
+  const s=HASHTAG_LIB[sector];if(!s)return;
+  document.getElementById('of-tag-inp').placeholder='Buscar en '+s.label+'…';
+  filterOfferTags('');
+}
+
+function filterOfferTags(q){
+  const sector=document.getElementById('of-sector').value;
+  const sugg=document.getElementById('of-tag-sugg');
+  const all=getAllTagsList();
+  const filtered=all.filter(x=>{
+    const inSector=!sector||x.sector===sector;
+    const matches=!q||x.tag.includes(q.replace('#','').toLowerCase());
+    const notSel=!selectedTags.includes(x.tag);
+    return inSector&&matches&&notSel;
+  }).slice(0,12);
+  if(!filtered.length){sugg.style.display='none';return}
+  sugg.style.display='block';
+  sugg.innerHTML=filtered.map(x=>'<div class="ts-item" data-tag="'+x.tag+'"><span>'+x.sectorData.icon+'</span><span>'+x.tag+'</span></div>').join('');
+  sugg.querySelectorAll('.ts-item').forEach(el=>{
+    el.addEventListener('mousedown',function(e){e.preventDefault();addTag(this.dataset.tag);});
+  });
+}
+
+function addTag(tag){
+  if(!selectedTags.includes(tag)&&selectedTags.length<5){
+    selectedTags.push(tag);
+    renderSelectedTags();
+  }
+  document.getElementById('of-tag-inp').value='';
+  document.getElementById('of-tag-sugg').style.display='none';
+}
+
+function removeTag(tag){selectedTags=selectedTags.filter(t=>t!==tag);renderSelectedTags()}
+
+function renderSelectedTags(){
+  document.getElementById('of-tags-wrap').innerHTML=selectedTags.map(t=>
+    '<span class="tag-sel-pill">'+t+'<button onclick="removeTag('+t+')">×</button></span>').join('');
+}
+
+function tagKD(e){if(e.key==='Enter'&&e.target.value){addTag('#'+e.target.value.replace(/[^a-z0-9_]/gi,'_'));e.preventDefault()}}
+
+function saveOffer(){
+  const p=getActive();if(!p)return;
+  const titulo=document.getElementById('of-desc').value.trim();
+  const lugar=document.getElementById('of-lugar').value.trim();
+  if(!titulo){alert('Escribe una descripción');return}
+  const id='of'+Date.now();
+  const offer={
+    id,authorId:p.id,
+    titulo,sector:document.getElementById('of-sector').value,
+    tags:[...selectedTags],
+    vacantes:parseInt(document.getElementById('of-vacantes').value)||1,
+    fecha:document.getElementById('of-fecha').value,
+    hora:document.getElementById('of-hora').value,
+    duracion:document.getElementById('of-duracion').value,
+    lugar,compTipo:selComp,
+    importe:selComp==='puntual'?document.getElementById('of-importe').value:'',
+    contrato:selComp==='contrato'?document.getElementById('of-contrato').value:'',
+    estado:'abierta',candidates:[],accepted:[],
+    createdAt:Date.now()
+  };
+  const offers=getOffers();offers.unshift(offer);saveOffers(offers);
+  document.getElementById('create-overlay').classList.remove('open');
+  renderOfertas('mias');
+  nav(1);
+  alert('✅ Oferta publicada');
+}
+
+// ═══════════════════════════════════════════════
+// PERFIL
+// ═══════════════════════════════════════════════
+function renderPerfil(){
+  const p=getActive();if(!p)return;
+  const starsFull=[1,2,3,4,5].map(i=>'<span class="star-ic '+(i<=Math.round(p.rating)?'on':'off')+'">★</span>').join('');
+  // Determinar modo estándar
+  const activeWork=getOffers().find(o=>(o.accepted||[]).includes(p.id)&&o.estado!=='cerrada'&&o.compTipo==='contrato');
+  const defaultMode=activeWork?'ofrezco':profileMode;
+  const isSearch=defaultMode==='busco';
+  const hist=p.historial||[];
+  document.getElementById('perfil-content').innerHTML=`
+    <div class="prof-hero">
+      <button class="prof-logout" onclick="doLogout()">Salir</button>
+      <div class="prof-av" style="background:${p.color}">${initials(p.nombre)}</div>
+      <div class="prof-name">${p.nombre}</div>
+      <div class="prof-type">${tipoLabel(p.tipo)}</div>
+      <div class="prof-stars">
+        ${starsFull}
+        <span class="prof-rv">${p.rating||'—'}</span>
+        <span class="prof-rc">(${p.trabajos||0} trabajos)</span>
+      </div>
+    </div>
+    <!-- SONAR TOGGLE -->
+    <div class="sonar-row">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--navy)">📡 SONAR ${p.sonarActivo!==false?'Activo':'Inactivo'}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:2px">${p.sonarActivo!==false?'Eres visible en tu zona':'No apareces en el SONAR'}</div>
+      </div>
+      <label class="tog">
+        <input type="checkbox" ${p.sonarActivo!==false?'checked':''} onchange="toggleSonar(this.checked)">
+        <div class="tog-track"></div>
+        <div class="tog-knob"></div>
+      </label>
+    </div>
+    ${!p.testCompleted?'<div class="test-banner"><div style="font-size:18px">⚠️</div><div style="flex:1"><div style="font-size:12px;font-weight:700;color:#92400e">Puntuación provisional (1.0)</div><div style="font-size:11px;color:#a16207;margin-top:1px">Completa el test para mejorar tu visibilidad SONAR</div></div></div>':''}
+    <div class="mode-cards">
+      <div class="mode-card ${isSearch?'on':''}" onclick="setProfMode('busco')">
+        <div class="mode-card-ico">🔍</div>
+        <div class="mode-card-lbl">Busco</div>
+        <div class="mode-card-sub">Lo que estoy buscando</div>
+      </div>
+      <div class="mode-card ${!isSearch?'on':''}" onclick="setProfMode('ofrezco')">
+        <div class="mode-card-ico">✋</div>
+        <div class="mode-card-lbl">Ofrezco</div>
+        <div class="mode-card-sub">Lo que sé hacer</div>
+      </div>
+    </div>
+    <div class="prof-block">
+      <div class="prof-block-head">
+        <div class="prof-block-title">${isSearch?'Lo que busco':'Lo que ofrezco'}</div>
+        <button class="edit-btn" onclick="editTags('${isSearch?'search':'offer'}')">${(isSearch?p.searchTags:p.offerTags||[]).length?'Editar':'+ Añadir'}</button>
+      </div>
+      <div class="tag-list">
+        ${(isSearch?p.searchTags:p.offerTags||[]).length
+          ?(isSearch?p.searchTags:p.offerTags).map(t=>'<span class="tag-pill tag-pill-navy">'+t+'</span>').join('')
+          :'<span style="font-size:12px;color:var(--gray)">Sin categorías. Pulsa + Añadir para configurar tu perfil.</span>'
+        }
+      </div>
+    </div>
+    <div class="prof-block">
+      <div class="prof-block-head">
+        <div class="prof-block-title">Sobre mí / Mi negocio</div>
+        <button class="edit-btn" onclick="editBio()">Editar</button>
+      </div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.5">${p.bio||'<span style="color:var(--gray)">Sin descripción. Añade información sobre ti o tu negocio.</span>'}</div>
+    </div>
+    <div class="prof-block">
+      <div class="prof-block-head"><div class="prof-block-title">Insignias</div></div>
+      <div id="perfil-insignias"></div>
+      <div style="font-size:10px;color:var(--gray2);margin-top:8px">🥉 BRONCE · 🥈 PLATA · 🥇 ORO — Disponibles al lanzar Hyreum en tu ciudad</div>
+    </div>
+    <div class="prof-block">
+      <div class="prof-block-head">
+        <div class="prof-block-title">📁 Cartera de documentos</div>
+        <button class="edit-btn" onclick="showToast('Próximamente — disponible en la app oficial')">+ Subir</button>
+      </div>
+      <div id="perfil-docs"></div>
+    </div>
+    ${(()=>{
+      // Sección de puntuaciones recibidas — solo si hay historial valorado
+      const rated=hist.filter(h=>h.ratedByOther&&h.dims);
+      if(!rated.length) return '<div class="prof-block"><div class="prof-block-head"><div class="prof-block-title">Mis puntuaciones</div></div><div style="font-size:12px;color:var(--gray)">Aún no tienes puntuaciones. Aparecerán aquí cuando completes tu primer trabajo.</div></div>';
+      // Calcular media por dimensión
+      const dimKeys=Object.keys(rated[0].dims);
+      const avgs={};
+      dimKeys.forEach(k=>{
+        avgs[k]=+(rated.map(h=>h.dims[k]||0).reduce((a,b)=>a+b,0)/rated.length).toFixed(1);
+      });
+      const LABELS={
+        puntualidad:'⏱ Puntualidad',
+        calidad:'🎯 Calidad del trabajo',
+        actitud:'💪 Actitud y compromiso',
+        comunicacion:'📞 Comunicación',
+        repetiria:'🔄 Lo volvería a contratar',
+        puntualidad_pagos:'💰 Puntualidad en pagos',
+        claridad:'📋 Claridad de instrucciones',
+        trato:'🤝 Trato y respeto',
+        condiciones:'🏠 Condiciones de trabajo',
+        precio_justo:'💶 Precio justo al resultado',
+        resolucion:'🔧 Resolución de problemas',
+      };
+      const barsHtml=dimKeys.map(k=>{
+        const v=avgs[k];const pct=Math.round((v/5)*100);
+        const col=v>=4?'#15803D':v>=3?'#D4940A':'#B91C1C';
+        const lbl=LABELS[k]||k;
+        return '<div style="margin-bottom:9px">'+
+          '<div style="display:flex;justify-content:space-between;margin-bottom:3px">'+
+            '<span style="font-size:11px;color:var(--text2)">'+lbl+'</span>'+
+            '<span style="font-size:11px;font-weight:700;color:'+col+'">'+v+'</span>'+
+          '</div>'+
+          '<div style="height:5px;background:var(--gray3);border-radius:3px;overflow:hidden">'+
+            '<div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:3px"></div>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+      return '<div class="prof-block">'+
+        '<div class="prof-block-head">'+
+          '<div class="prof-block-title">Mis puntuaciones recibidas</div>'+
+          '<div style="font-size:10px;color:var(--gray)">'+rated.length+' valoración'+(rated.length>1?'es':'')+' verificada'+(rated.length>1?'s':'')+'</div>'+
+        '</div>'+
+        '<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;padding:10px;background:var(--bg);border-radius:10px">'+
+          '<div style="font-size:32px;font-weight:800;color:var(--navy);line-height:1">'+(p.rating||'—')+'</div>'+
+          '<div>'+
+            '<div style="color:var(--gold);font-size:13px">'+[1,2,3,4,5].map(i=>'<span>'+(i<=Math.round(p.rating||0)?'★':'☆')+'</span>').join('')+'</div>'+
+            '<div style="font-size:10px;color:var(--gray);margin-top:2px">Nota global verificada</div>'+
+          '</div>'+
+        '</div>'+
+        barsHtml+
+      '</div>';
+    })()}
+    <div class="prof-block">
+      <div class="prof-block-head"><div class="prof-block-title">Curriculum Vitae</div></div>
+      <button class="cv-btn-ui" onclick="alert('📎 La subida de CV estará disponible en la versión con servidor. Tu espacio está reservado.')">
+        <span style="font-size:20px">📄</span>
+        <span>Subir CV (próximamente)</span>
+      </button>
+    </div>
+    <div class="prof-block">
+      <div class="prof-block-head"><div class="prof-block-title">Historial de trabajos</div></div>
+      ${hist.length?hist.slice(0,5).map(h=>`
+        <div class="hist-item">
+          <div class="hist-ic">${HASHTAG_LIB[h.sector]?HASHTAG_LIB[h.sector].icon:'💼'}</div>
+          <div class="hist-main">
+            <div class="hist-title">${h.titulo}</div>
+            <div class="hist-sub">${h.empresa||''} ${h.fecha?'· '+h.fecha:''}</div>
+     hist-stars">${
+            h.ratedByOther
+              ? ('<span style="color:var(--gold)">'+'★'.repeat(Math.round(h.rating||0))+'☆'.repeat(5-Math.round(h.rating||0))+'</span> '+h.rating)
+              : h.rated===false
+                ? '<span style="font-size:10px;color:var(--red)">No valoró</span>'
+                : '<span style="font-size:10px;color:var(--gray2)">Pendiente valoración</span>'
+          }</div>
+          </div>
+        </div>
+      `).join(''):'<div style="font-size:12px;color:var(--gray)">Sin historial de trabajos todavía. ¡Completa tu primer trabajo en Hyreum!</div>'}
+    </div>
+  `;
+}
+
+function setProfMode(mode){profileMode=mode;renderPerfil()}
+
+function editTags(type){
+  selectedTags=type==='search'?[...(getActive().searchTags||[])]:([...(getActive().offerTags||[])]);
+  document.getElementById('edit-tags-title').textContent=type==='search'?'Lo que busco':'Lo que ofrezco';
+  document.getElementById('edit-tag-wrap').innerHTML='';
+  renderEditTags();
+  document.getElementById('edit-tag-inp').value='';
+  document.getElementById('edit-tag-sugg').style.display='none';
+  document.getElementById('edit-tag-overlay').dataset.type=type;
+  document.getElementById('edit-tag-overlay').classList.add('open');
+}
+
+function renderEditTags(){
+  document.getElementById('edit-tag-wrap').innerHTML=selectedTags.map(t=>
+    '<span class="tag-sel-pill">'+t+'<button onclick="removeEditTag('+t+')">×</button></span>').join('');
+}
+
+function removeEditTag(t){selectedTags=selectedTags.filter(x=>x!==t);renderEditTags()}
+
+function filterEditTags(q){
+  const sugg=document.getElementById('edit-tag-sugg');
+  const all=getAllTagsList().filter(x=>!selectedTags.includes(x.tag)&&(!q||x.tag.includes(q.replace('#','').toLowerCase()))).slice(0,10);
+  if(!all.length){sugg.style.display='none';return}
+  sugg.style.display='block';
+  sugg.innerHTML=all.map((x,i)=>'<div class="ts-item" data-tag="'+x.tag+'" data-idx="'+i+'">'+x.sectorData.icon+' '+x.tag+'</div>').join('');
+  sugg.querySelectorAll('.ts-item').forEach(el=>{
+    el.addEventListener('mousedown',function(e){e.preventDefault();addEditTag(this.dataset.tag);});
+  });
+}
+
+function addEditTag(tag){
+  if(!selectedTags.includes(tag)&&selectedTags.length<8)selectedTags.push(tag);
+  document.getElementById('edit-tag-inp').value='';
+  document.getElementById('edit-tag-sugg').style.display='none';
+  renderEditTags();
+}
+
+function saveEditTags(){
+  const type=document.getElementById('edit-tag-overlay').dataset.type;
+  const p=getActive();
+  if(type==='search')p.searchTags=[...selectedTags];
+  else p.offerTags=[...selectedTags];
+  saveActive(p);
+  document.getElementById('edit-tag-overlay').classList.remove('open');
+  renderPerfil();updateMap();
+}
+
+function editBio(){
+  const p=getActive();
+  const bio=prompt('Sobre ti o tu negocio (máx. 280 caracteres):',p.bio||'');
+  if(bio===null)return;
+  p.bio=bio.substring(0,280);saveActive(p);renderPerfil();
+}
+
+// ═══════════════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════════════
+function renderChat(){
+  const p=getActive();if(!p)return;
+  const chats=getChats();
+  const list=document.getElementById('chat-list');
+  const myChats=Object.entries(chats).filter(([cid])=>cid.includes(p.id));
+  if(!myChats.length){
+    list.innerHTML='<div class="empty-state"><div class="empty-ico">💬</div><div class="empty-title">Sin conversaciones</div><div class="empty-sub">Los chats se abren cuando conectas con alguien en el SONAR o cuando te aceptan en una oferta.</div></div>';
+    return;
+  }
+  list.innerHTML=myChats.map(([cid,msgs])=>{
+    const otherId=cid.split('__').find(id=>id!==p.id);
+    const other=getUsers().find(u=>u.id===otherId)||simPool.find(u=>u.id===otherId);
+    if(!other)return'';
+    const last=msgs[msgs.length-1];
+    const unread=LS.get('unread_'+cid)||0;
+    const ini=initials(other.nombre);
+    return '<div class="chat-item'+(unread?' unread':'')+'" onclick="openChatById('+cid+')">'+
+      '<div class="chat-av" style="background:'+other.color+'">'+ini+'</div>'+
+      '<div class="chat-info">'+
+        '<div class="chat-name">'+other.nombre+'</div>'+
+        '<div class="chat-preview">'+(last?last.text||'📋 Acuerdo':'Sin mensajes')+'</div>'+
+      '</div>'+
+      '<div class="chat-meta">'+
+        (last?'<div class="chat-time">'+timeAgo(last.ts)+'</div>':'')+
+        (unread?'<div class="chat-unread-dot">'+unread+'</div>':'')+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function openChatById(cid){
+  const p=getActive();if(!p)return;
+  const otherId=cid.split('__').find(id=>id!==p.id);
+  const other=getUsers().find(u=>u.id===otherId)||simPool.find(u=>u.id===otherId);
+  if(!other)return;
+  LS.set('unread_'+cid,0);updateBadges();
+  openChatWith({id:other.id,nombre:other.nombre,color:other.color,tipo:other.tipo,sub:other.mun||''});
+}
+
+function openChatWith(other){
+  const p=getActive();if(!p)return;
+  const cid=getChatId(p.id,other.id);
+  activeChatId=cid;
+  document.getElementById('cd-name').textContent=other.nombre;
+  document.getElementById('cd-sub').textContent=tipoLabel(other.tipo)+(other.sub?' · '+other.sub:'');
+  renderMessages(cid);
+  document.getElementById('chat-detail').classList.add('show');
+  nav(3);
+}
+
+function renderMessages(cid){
+  const p=getActive();if(!p)return;
+  const msgs=getMessages(cid);
+  const el=document.getElementById('cd-msgs');
+  if(!msgs.length){el.innerHTML='<div style="text-align:center;padding:32px;font-size:12px;color:var(--gray)">Inicio de la conversación. Sé el primero en escribir.</div>';return}
+  el.innerHTML=msgs.map(m=>{
+    if(m.type==='acuerdo'){
+      return '<div class="msg-row'+(m.from===p.id?' mine':'')+'">'+
+        '<div class="bubble-acuerdo">'+
+          '<div class="bac-title">📋 Acuerdo propuesto</div>'+
+          '<div class="bac-row"><span class="bac-label">Trabajo:</span>'+m.desc+'</div>'+
+          '<div class="bac-row"><span class="bac-label">Precio:</span>'+m.precio+'</div>'+
+          '<div class="bac-row"><span class="bac-label">Duración:</span>'+m.duracion+'</div>'+
+          (m.fecha?'<div class="bac-row"><span class="bac-label">Inicio:</span>'+m.fecha+'</div>':'')+
+        '</div>'+
+        '<div class="bubble-time">'+(m.from===p.id?'Tú · ':'')+ timeAgo(m.ts)+'</div>'+
+      '</div>';
+    }
+    const mine=m.from===p.id;
+    return '<div class="msg-row'+(mine?' mine':'')+'">'+
+      '<div class="bubble '+(mine?'mine':'theirs')+'">'+m.text+'</div>'+
+      '<div class="bubble-time">'+(mine?'Tú · ':'')+fmtTime(m.ts)+'</div>'+
+    '</div>';
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+function sendMsg(){
+  const p=getActive();if(!p||!activeChatId)return;
+  const inp=document.getElementById('cd-inp');
+  const text=inp.value.trim();if(!text)return;
+  addMessage(activeChatId,{from:p.id,text,ts:Date.now()});
+  inp.value='';renderMessages(activeChatId);
+  // Simulate response after delay
+  const otherId=activeChatId.split('__').find(id=>id!==p.id);
+  const other=simPool.find(u=>u.id===otherId);
+  if(other){
+    setTimeout(()=>{
+      const responses=['👍 Perfecto, ¿cuándo podemos quedar?','De acuerdo, me parece bien.','¿Puedes darme más detalles?','Sí, estoy disponible.','Lo miro y te digo.','Entendido, gracias por contactar.','¿A qué hora exactamente?','Muy bien, cuéntame más.'];
+      addMessage(activeChatId,{from:otherId,text:responses[~~(Math.random()*responses.length)],ts:Date.now()});
+      renderMessages(activeChatId);
+    },1200+Math.random()*2000);
+  }
+}
+
+function closeChatDetail(){
+  document.getElementById('chat-detail').classList.remove('show');
+  activeChatId=null;renderChat();
+}
+
+function openAcuerdo(){document.getElementById('acuerdo-overlay').classList.add('open')}
+
+function sendAcuerdo(){
+  const p=getActive();if(!p||!activeChatId)return;
+  const desc=document.getElementById('ac-desc').value.trim();
+  const precio=document.getElementById('ac-precio').value.trim();
+  const dur=document.getElementById('ac-dur').value.trim();
+  const fecha=document.getElementById('ac-fecha2').value;
+  if(!desc||!precio){alert('Rellena al menos la descripción y el precio');return}
+  addMessage(activeChatId,{from:p.id,type:'acuerdo',desc,precio,duracion:dur||'A definir',fecha,ts:Date.now()});
+  document.getElementById('acuerdo-overlay').classList.remove('open');
+  document.getElementById('ac-desc').value='';
+  document.getElementById('ac-precio').value='';
+  document.getElementById('ac-dur').value='';
+  document.getElementById('ac-fecha2').value='';
+  renderMessages(activeChatId);
+  alert('📋 Acuerdo registrado en el chat');
+}
+
+function deleteChatConfirm(){
+  if(!activeChatId)return;
+  if(!confirm('¿Eliminar esta conversación? No se puede deshacer.'))return;
+  deleteChat(activeChatId);
+  closeChatDetail();
+}
+
+// ═══════════════════════════════════════════════
+// NOTIFS
+// ═══════════════════════════════════════════════
+function renderNotifs(){
+  const p=getActive();if(!p)return;
+  const notifs=getNotifs(p.id);
+  const el=document.getElementById('notif-list');
+  const all=[...notifs].sort((a,b)=>b.time-a.time);
+  if(!all.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-ico">🔔</div><div class="empty-title">Sin actividad reciente</div><div class="empty-sub">Aquí verás notificaciones de matches, candidatos, aceptaciones y acuerdos.</div></div>';
+    return;
+  }
+  el.innerHTML=all.map(n=>
+    '<div class="notif-item'+(n.read?'':' unread')+'">'+
+      '<div class="notif-ic">'+n.icon+'</div>'+
+      '<div class="notif-body">'+
+        '<div class="notif-title">'+n.texto+'</div>'+
+        '<div class="notif-time">'+timeAgo(n.time)+'</div>'+
+      '</div>'+
+    '</div>'
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════
+// RATING
+// ═══════════════════════════════════════════════
+function openRating(offerId){
+  currentRatingOffer=offerId;ratingVal=0;
+  ratingDims={puntualidad:0,profesionalidad:0,trato:0,calidad:0};
+  const o=getOffers().find(x=>x.id===offerId);
+  document.getElementById('rating-who').textContent=o?'Oferta: '+(o.titulo||''):'';
+  // Reset todas las dimensiones
+  ['puntualidad','profesionalidad','trato','calidad'].forEach(dim=>{
+    const el=document.getElementById('star-'+dim);
+    if(el)el.querySelectorAll('.star-tap').forEach(s=>s.textContent='☆');
+  });
+  document.getElementById('rating-comment').value='';
+  document.getElementById('rating-overlay').classList.add('open');
+}
+
+function setRating(v){
+  ratingVal=v;
+}
+
+function setDimRating(dim,v){
+  ratingDims[dim]=v;
+  const el=document.getElementById('star-'+dim);
+  if(!el)return;
+  el.querySelectorAll('.star-tap').forEach((s,i)=>{s.textContent=i<v?'★':'☆';});
+  // Calcular media de dimensiones
+  const vals=Object.values(ratingDims).filter(x=>x>0);
+  ratingVal=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+}
+
+function submitRating(){
+  if(!ratingVal){alert('Selecciona una puntuación');return}
+  const p=getActive();
+  if(!p)return;
+  const o=getOffers().find(x=>x.id===currentRatingOffer);
+  const comment=document.getElementById('rating-comment').value.trim();
+  if(!p.historial)p.historial=[];
+  p.historial.unshift({
+    titulo:o?o.titulo||'Trabajo':'Trabajo',
+    empresa:'',sector:o?o.sector:'',
+    rating:ratingVal,comment,
+    fecha:new Date().toLocaleDateString('es-ES'),
+    rated:true
+  });
+  const allRatings=p.historial.filter(h=>h.rated).map(h=>h.rating);
+  p.rating=+(allRatings.reduce((a,b)=>a+b,0)/allRatings.length).toFixed(1);
+  p.trabajos=(p.trabajos||0)+1;
+  saveActive(p);
+  document.getElementById('rating-overlay').classList.remove('open');
+  renderPerfil();
+  alert('⭐ Valoración enviada. ¡Gracias!');
+}
+
+function skipRating(){
+  const p=getActive();if(!p)return;
+  const o=getOffers().find(x=>x.id===currentRatingOffer);
+  if(!p.historial)p.historial=[];
+  p.historial.unshift({titulo:o?o.titulo||'Trabajo':'Trabajo',sector:o?o.sector:'',rated:false,fecha:new Date().toLocaleDateString('es-ES')});
+  saveActive(p);
+  document.getElementById('rating-overlay').classList.remove('open');
+  alert('Registrado que no valoraste. Esto queda visible en tu perfil.');
+}
+
+// ═══════════════════════════════════════════════
+// CLOSE MODALS
+// ═══════════════════════════════════════════════
+function closeOverlay(id,e){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.remove('open')}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded',()=>{
+  // Populate municipios datalist
+  const dl=document.getElementById('mun-dl');
+  if(dl)MUNICIPIOS.forEach(m=>{const o=document.createElement('option');o.value=m.n;dl.appendChild(o)});
+  initSplash();
+});
+
+
+</script>
+<div id="toast"></div>
+</body>
+</html>
